@@ -33,6 +33,7 @@
       <div class="content-wrapper">
         <MidiConnection v-if="currentView === 'connection'" />
         <ChordPractice v-else-if="currentView === 'chord-practice'" />
+        <PracticeMode v-else-if="currentView === 'practice-mode'" />
       </div>
     </div>
   </div>
@@ -42,8 +43,9 @@
 import { ref } from 'vue'
 import MidiConnection from './components/MidiConnection.vue'
 import ChordPractice from './components/ChordPractice.vue'
+import PracticeMode from './components/PracticeMode.vue'
 
-type ViewId = 'connection' | 'chord-practice'
+type ViewId = 'connection' | 'chord-practice' | 'practice-mode'
 
 interface MenuItem {
   id: ViewId
@@ -64,6 +66,12 @@ const menuItems: MenuItem[] = [
     label: 'Chord Practice',
     description: 'Fretboard visualization',
     icon: '🎸'
+  },
+  {
+    id: 'practice-mode',
+    label: 'Practice Mode',
+    description: 'Timed chord practice',
+    icon: '🎯'
   }
 ]
 

@@ -29,8 +29,8 @@
       <div class="fretboard-inner">
         <!-- Fret markers (top) -->
         <div class="fret-markers">
-          <div class="string-label-spacer"></div>
           <div class="play-indicator-spacer"></div>
+          <div class="string-label-spacer"></div>
           <div
             v-for="fret in 12"
             :key="`marker-${fret}`"
@@ -48,17 +48,17 @@
             :key="`string-${string}`"
             class="string-row"
           >
-            <!-- String number label -->
-            <div class="string-label">
-              <span>
-                {{ getStringName(string) }}
-              </span>
-            </div>
-
             <!-- Play indicator (X or O) -->
             <div class="play-indicator">
               <span v-if="currentChord">
                 {{ getPlayIndicator(string) }}
+              </span>
+            </div>
+
+            <!-- String number label -->
+            <div class="string-label">
+              <span>
+                {{ getStringName(string) }}
               </span>
             </div>
 
@@ -176,6 +176,7 @@ import chordsData from '../data/chords.json'
 
 interface Props {
   fretPositions: Map<number, number>
+  selectedChord?: string | null  // Optional: for practice mode
 }
 
 interface ChordPosition {
@@ -240,18 +241,29 @@ chordsData.forEach((jsonChord: ChordJson) => {
   chords[jsonChord.name] = convertChordData(jsonChord)
 })
 
-const selectedChord = ref<string | null>(null)
+const internalSelectedChord = ref<string | null>(null)
+
+// Use prop if provided, otherwise use internal state
+const selectedChord = computed(() => {
+  return props.selectedChord !== undefined ? props.selectedChord : internalSelectedChord.value
+})
 
 const currentChord = computed(() => {
   return selectedChord.value ? chords[selectedChord.value] : null
 })
 
 const selectChord = (chordName: string) => {
-  selectedChord.value = chordName
+  // Only update internal state if not controlled by prop
+  if (props.selectedChord === undefined) {
+    internalSelectedChord.value = chordName
+  }
 }
 
 const clearChord = () => {
-  selectedChord.value = null
+  // Only update internal state if not controlled by prop
+  if (props.selectedChord === undefined) {
+    internalSelectedChord.value = null
+  }
 }
 
 const getStringName = (stringNumber: number): string => {
