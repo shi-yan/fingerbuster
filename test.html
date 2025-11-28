@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Bluetooth MIDI Receiver</title>
+    <!-- Load Tailwind CSS for modern styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for better readability and centering */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f9fb;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="w-full max-w-4xl bg-white shadow-2xl rounded-xl p-8 space-y-6">
+    <header class="text-center space-y-2">
+        <h1 class="text-3xl font-extrabold text-indigo-700">Web MIDI Receiver</h1>
+        <p id="status-message" class="text-lg font-medium text-gray-600">Checking for Web MIDI support...</p>
+        <p class="text-sm text-red-500 font-semibold">
+            NOTE: This application requires a Chromium-based browser (Chrome, Edge, Opera) and **must be run over HTTPS or localhost** for Web MIDI functionality.
+        </p>
+    </header>
+
+    <div class="flex flex-col sm:flex-row gap-4">
+        <button id="connect-button"
+                class="w-full sm:w-1/2 py-3 px-6 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition duration-150 ease-in-out disabled:bg-gray-400"
+                disabled>
+            Connect MIDI Device (Tap or Click)
+        </button>
+        <button id="disconnect-button"
+                class="w-full sm:w-1/2 py-3 px-6 bg-red-600 text-white font-semibold rounded-lg shadow-md hover:bg-red-700 transition duration-150 ease-in-out disabled:bg-gray-400"
+                disabled>
+            Disconnect All
+        </button>
+    </div>
+
+    <div class="space-y-4">
+        <h2 class="text-xl font-bold text-gray-800 border-b pb-2">Connected Devices</h2>
+        <div id="device-list" class="space-y-2">
+            <p class="text-gray-500 italic">No devices connected yet.</p>
+        </div>
+    </div>
+
+    <div class="space-y-4">
+        <h2 class="text-xl font-bold text-gray-800 border-b pb-2">MIDI Message Log</h2>
+        <div id="log" class="bg-gray-100 p-4 rounded-lg h-64 overflow-y-scroll text-sm font-mono text-gray-800">
+            <!-- Messages will appear here -->
+        </div>
+    </div>
+</div>
+
+<script>
+    // Global references for MIDI access and elements
+    let midiAccess = null;
+    const logElement = document.getElementById('log');
+    const statusMessageElement = document.getElementById('status-message');
+    const deviceListElement = document.getElementById('device-list');
+    const connectButton = document.getElementById('connect-button');
+    const disconnectButton = document.getElementById('disconnect-button');
+    let connectedInputs = [];
+
+    // --- Utility Functions ---
+
+    /**
+     * Adds a message to the on-screen log and scrolls to the bottom.
+     * @param {string} message The message to log.
+     * @param {string} color Tailwind text color class.
+     */
+    function logMessage(message, color = 'text-gray-800') {
+        const p = document.createElement('p');
+        p.className = `${color}`;
+        p.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+        logElement.appendChild(p);
+        // Keep the log scrolled to the bottom
+        logElement.scrollTop = logElement.scrollHeight;
+    }
+
+    // --- MIDI Logic ---
+
+    /**
+     * Handles incoming MIDI messages from any connected input device.
+     * @param {MIDIMessageEvent} event The MIDI message event.
+     */
+    function onMIDIMessage(event) {
+        // event.data is an array of bytes: [status, data1, data2]
+        const status = event.data[0];
+        const data1 = event.data[1];
+        const data2 = event.data[2];
+        const portName = event.target.name || event.target.id;
+        
+        // Extract Channel (status & 0x0F) and Message Type (status & 0xF0)
+        const channel = (status & 0x0F) + 1; // MIDI channels are 1-16
+        const messageTypeByte = status & 0xF0;
+        
+        let messageType = 'Unknown';
+        let logColor = 'text-gray-800';
+        let detail = '';
+
+        // Check common MIDI message types
+        switch (messageTypeByte) { // Using the message type byte for the switch
+            case 0x90: // Note On
+                if (data2 > 0) { // Note On (velocity > 0)
+                    messageType = 'Note ON';
+                    detail = `Channel ${channel} | Note: ${data1} (Velocity: ${data2})`;
+                    logColor = 'text-green-600';
+                } else { // Note Off (Note On with velocity 0)
+                    messageType = 'Note OFF';
+                    detail = `Channel ${channel} | Note: ${data1}`;
+                    logColor = 'text-orange-500';
+                }
+                break;
+            case 0x80: // Note Off
+                messageType = 'Note OFF';
+                detail = `Channel ${channel} | Note: ${data1}`;
+                logColor = 'text-orange-500';
+                break;
+            case 0xB0: // Control Change (CC)
+                messageType = 'CC (Control Change)';
+                detail = `Channel ${channel} | Controller: ${data1}, Value: ${data2}`;
+                logColor = 'text-blue-600';
+                break;
+            case 0xC0: // Program Change
+                messageType = 'Program Change';
+                detail = `Channel ${channel} | Program Number: ${data1}`;
+                logColor = 'text-purple-600';
+                break;
+            case 0xE0: // Pitch Bend
+                // data1 and data2 form a 14-bit value: ((data2 & 0x7F) << 7) | (data1 & 0x7F)
+                const pitchValue = ((data2 & 0x7F) << 7) | (data1 & 0x7F);
+                messageType = 'Pitch Bend';
+                detail = `Channel ${channel} | Value: ${pitchValue}`;
+                logColor = 'text-yellow-600';
+                break;
+            case 0xF0: // System messages (e.g., Timing Clock, Sysex)
+                messageType = 'System Message';
+                detail = `Status: 0x${status.toString(16)} (Bytes: ${event.data.length})`;
+                logColor = 'text-purple-700';
+                break;
+            default:
+                messageType = `MIDI Event 0x${status.toString(16)}`;
+                detail = `Data: 0x${data1 ? data1.toString(16) : 'N/A'}, 0x${data2 ? data2.toString(16) : 'N/A'}`;
+                break;
+        }
+
+        logMessage(`[${portName}] ${messageType}: ${detail}`, logColor);
+    }
+
+    /**
+     * Sets up the message listeners for all available MIDI input ports.
+     * @param {MIDIAccess} midiAccessObject The MIDIAccess object.
+     */
+    function setupMIDIInputs(midiAccessObject) {
+        deviceListElement.innerHTML = '';
+        connectedInputs = [];
+
+        if (midiAccessObject.inputs.size === 0) {
+            deviceListElement.innerHTML = '<p class="text-gray-500 italic">No MIDI input ports found. Ensure your device is connected/paired.</p>';
+            return;
+        }
+
+        midiAccessObject.inputs.forEach((input) => {
+            // Check if this input is already tracked
+            if (!connectedInputs.some(i => i.id === input.id)) {
+                input.onmidimessage = onMIDIMessage;
+                connectedInputs.push(input);
+                logMessage(`Listening to input port: ${input.name} (${input.manufacturer})`, 'text-green-700');
+            }
+
+            const deviceDiv = document.createElement('div');
+            deviceDiv.className = 'p-3 bg-white border border-gray-200 rounded-md shadow-sm';
+            deviceDiv.innerHTML = `
+                <p class="font-semibold text-gray-900">${input.name}</p>
+                <p class="text-xs text-gray-500">Manufacturer: ${input.manufacturer || 'N/A'} | Type: Input</p>
+                <p class="text-xs text-gray-500">State: <span class="text-green-600">${input.state}</span></p>
+            `;
+            deviceListElement.appendChild(deviceDiv);
+        });
+
+        if (connectedInputs.length > 0) {
+            disconnectButton.disabled = false;
+            connectButton.textContent = 'Refresh Device List';
+        }
+    }
+
+    /**
+     * Initializes the Web MIDI API.
+     */
+    async function initMIDI() {
+        // 1. Check for Secure Context (HTTPS or localhost)
+        if (typeof isSecureContext !== 'undefined' && !isSecureContext) {
+            statusMessageElement.textContent = "Web MIDI API BLOCKED: Requires a Secure Context (HTTPS/localhost).";
+            connectButton.disabled = true;
+            logMessage("ERROR: MIDI API blocked. Ensure the app is run over HTTPS or localhost.", 'text-red-700');
+            return;
+        }
+
+        // 2. Check for API support
+        if (!navigator.requestMIDIAccess) {
+            statusMessageElement.textContent = "Web MIDI API is NOT supported in this browser.";
+            connectButton.disabled = true;
+            logMessage("ERROR: navigator.requestMIDIAccess is undefined.", 'text-red-700');
+            return;
+        }
+
+        statusMessageElement.textContent = "Web MIDI API is supported. Click Connect.";
+        connectButton.disabled = false;
+
+        connectButton.onclick = async () => {
+            logMessage('Requesting MIDI Access...');
+            try {
+                // Request access, including Sysex permissions for system messages
+                midiAccess = await navigator.requestMIDIAccess({ sysex: true });
+
+                // Listen for device connections/disconnections
+                midiAccess.onstatechange = (event) => {
+                    const port = event.port;
+                    logMessage(`MIDI Port State Change: ${port.name} is now ${port.state}`, 'text-blue-500');
+                    setupMIDIInputs(midiAccess);
+                };
+
+                // Initial setup
+                setupMIDIInputs(midiAccess);
+
+                if (midiAccess.inputs.size > 0) {
+                    statusMessageElement.textContent = `Connected and listening to ${midiAccess.inputs.size} input(s).`;
+                } else {
+                    statusMessageElement.textContent = "MIDI Access granted. Waiting for a device...";
+                }
+
+            } catch (error) {
+                statusMessageElement.textContent = "MIDI Access Denied or Failed. (Check Permissions)";
+                logMessage(`Error getting MIDI access: ${error.message}`, 'text-red-700');
+            }
+        };
+
+        disconnectButton.onclick = () => {
+            connectedInputs.forEach(input => {
+                input.onmidimessage = null; // Remove listener
+                logMessage(`Disconnected listener from ${input.name}`, 'text-red-700');
+            });
+            connectedInputs = [];
+            deviceListElement.innerHTML = '<p class="text-gray-500 italic">No devices connected yet.</p>';
+            disconnectButton.disabled = true;
+            connectButton.textContent = 'Connect MIDI Device (Tap or Click)';
+            statusMessageElement.textContent = "MIDI access is ready. Click Connect to find devices.";
+        };
+    }
+
+    // Start the application when the DOM content is fully loaded
+    document.addEventListener('DOMContentLoaded', initMIDI);
+
+</script>
+
+</body>
+</html>
