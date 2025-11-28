@@ -1,0 +1,266 @@
+[
+  {
+    "name": "G",
+    "string_1": {
+      "play": true,
+      "fret": 3,
+      "finger": 4
+    },
+    "string_2": {
+      "play": true,
+      "fret": 0,
+      "finger": 0
+    },
+    "string_3": {
+      "play": true,
+      "fret": 0,
+      "finger": 0
+    },
+    "string_4": {
+      "play": true,
+      "fret": 0,
+      "finger": 0
+    },
+    "string_5": {
+      "play": true,
+      "fret": 2,
+      "finger": 2
+    },
+    "string_6": {
+      "play": true,
+      "fret": 3,
+      "finger": 3
+    }
+  },
+  {
+    "name": "C",
+    "string_1": {
+      "play": true,
+      "fret": 0,
+      "finger": 0
+    },
+    "string_2": {
+      "play": true,
+      "fret": 1,
+      "finger": 1
+    },
+    "string_3": {
+      "play": true,
+      "fret": 0,
+      "finger": 0
+    },
+    "string_4": {
+      "play": true,
+      "fret": 2,
+      "finger": 2
+    },
+    "string_5": {
+      "play": true,
+      "fret": 3,
+      "finger": 3
+    },
+    "string_6": {
+      "play": false,
+      "fret": 0,
+      "finger": 0
+    }
+  },
+  {
+    "name": "D",
+    "string_1": {
+      "play": true,
+      "fret": 2,
+      "finger": 2
+    },
+    "string_2": {
+      "play": true,
+      "fret": 3,
+      "finger": 3
+    },
+    "string_3": {
+      "play": true,
+      "fret": 2,
+      "finger": 1
+    },
+    "string_4": {
+      "play": true,
+      "fret": 0,
+      "finger": 0
+    },
+    "string_5": {
+      "play": false,
+      "fret": 0,
+      "finger": 0
+    },
+    "string_6": {
+      "play": false,
+      "fret": 0,
+      "finger": 0
+    }
+  },
+  {
+    "name": "Em",
+    "string_1": {
+      "play": true,
+      "fret": 0,
+      "finger": 0
+    },
+    "string_2": {
+      "play": true,
+      "fret": 0,
+      "finger": 0
+    },
+    "string_3": {
+      "play": true,
+      "fret": 0,
+      "finger": 0
+    },
+    "string_4": {
+      "play": true,
+      "fret": 2,
+      "finger": 2
+    },
+    "string_5": {
+      "play": true,
+      "fret": 2,
+      "finger": 3
+    },
+    "string_6": {
+      "play": true,
+      "fret": 0,
+      "finger": 0
+    }
+  },
+  {
+    "name": "A",
+    "string_1": {
+      "play": true,
+      "fret": 0,
+      "finger": 0
+    },
+    "string_2": {
+      "play": true,
+      "fret": 2,
+      "finger": 2
+    },
+    "string_3": {
+      "play": true,
+      "fret": 2,
+      "finger": 3
+    },
+    "string_4": {
+      "play": true,
+      "fret": 2,
+      "finger": 4
+    },
+    "string_5": {
+      "play": true,
+      "fret": 0,
+      "finger": 0
+    },
+    "string_6": {
+      "play": false,
+      "fret": 0,
+      "finger": 0
+    }
+  },
+  {
+    "name": "E",
+    "string_1": {
+      "play": true,
+      "fret": 0,
+      "finger": 0
+    },
+    "string_2": {
+      "play": true,
+      "fret": 0,
+      "finger": 0
+    },
+    "string_3": {
+      "play": true,
+      "fret": 1,
+      "finger": 1
+    },
+    "string_4": {
+      "play": true,
+      "fret": 2,
+      "finger": 3
+    },
+    "string_5": {
+      "play": true,
+      "fret": 2,
+      "finger": 2
+    },
+    "string_6": {
+      "play": true,
+      "fret": 0,
+      "finger": 0
+    }
+  },
+  {
+    "name": "Am",
+    "string_1": {
+      "play": true,
+      "fret": 0,
+      "finger": 0
+    },
+    "string_2": {
+      "play": true,
+      "fret": 1,
+      "finger": 1
+    },
+    "string_3": {
+      "play": true,
+      "fret": 2,
+      "finger": 3
+    },
+    "string_4": {
+      "play": true,
+      "fret": 2,
+      "finger": 2
+    },
+    "string_5": {
+      "play": true,
+      "fret": 0,
+      "finger": 0
+    },
+    "string_6": {
+      "play": false,
+      "fret": 0,
+      "finger": 0
+    }
+  },
+  {
+    "name": "Dm",
+    "string_1": {
+      "play": true,
+      "fret": 1,
+      "finger": 1
+    },
+    "string_2": {
+      "play": true,
+      "fret": 3,
+      "finger": 3
+    },
+    "string_3": {
+      "play": true,
+      "fret": 2,
+      "finger": 2
+    },
+    "string_4": {
+      "play": true,
+      "fret": 0,
+      "finger": 0
+    },
+    "string_5": {
+      "play": false,
+      "fret": 0,
+      "finger": 0
+    },
+    "string_6": {
+      "play": false,
+      "fret": 0,
+      "finger": 0
+    }
+  }
+]

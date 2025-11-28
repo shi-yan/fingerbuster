@@ -144,6 +144,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import chordsData from '../data/chords.json'
 
 interface Props {
   fretPositions: Map<number, number>
@@ -159,6 +160,22 @@ interface Chord {
   positions: (ChordPosition | 'x' | null)[] // null = open string (0), 'x' = don't play
 }
 
+interface ChordStringData {
+  play: boolean
+  fret: number
+  finger: number
+}
+
+interface ChordJson {
+  name: string
+  string_1: ChordStringData
+  string_2: ChordStringData
+  string_3: ChordStringData
+  string_4: ChordStringData
+  string_5: ChordStringData
+  string_6: ChordStringData
+}
+
 const props = defineProps<Props>()
 
 const fretWidth = 80
@@ -166,54 +183,34 @@ const fretWidth = 80
 // String names from 1st (high e) to 6th (low E)
 const stringNames = ['e', 'B', 'G', 'D', 'A', 'E']
 
-// Chord definitions
-// Array index 0 = string 1 (high e), index 5 = string 6 (low E)
-const chords: Record<string, Chord> = {
-  'G': {
-    name: 'G',
-    positions: [
-      { fret: 3, finger: 4 },  // 1st string (e) - 3rd fret
-      null,                     // 2nd string (B) - open
-      null,                     // 3rd string (G) - open
-      null,                     // 4th string (D) - open
-      { fret: 2, finger: 2 },  // 5th string (A) - 2nd fret
-      { fret: 3, finger: 3 }   // 6th string (E) - 3rd fret
-    ]
-  },
-  'C': {
-    name: 'C',
-    positions: [
-      null,                     // 1st string (e) - open
-      { fret: 1, finger: 1 },  // 2nd string (B) - 1st fret
-      null,                     // 3rd string (G) - open
-      { fret: 2, finger: 2 },  // 4th string (D) - 2nd fret
-      { fret: 3, finger: 3 },  // 5th string (A) - 3rd fret
-      'x'                       // 6th string (E) - don't play
-    ]
-  },
-  'D': {
-    name: 'D',
-    positions: [
-      { fret: 2, finger: 2 },  // 1st string (e) - 2nd fret
-      { fret: 3, finger: 3 },  // 2nd string (B) - 3rd fret
-      { fret: 2, finger: 1 },  // 3rd string (G) - 2nd fret
-      null,                     // 4th string (D) - open
-      'x',                      // 5th string (A) - don't play
-      'x'                       // 6th string (E) - don't play
-    ]
-  },
-  'Em': {
-    name: 'Em',
-    positions: [
-      null,                     // 1st string (e) - open
-      null,                     // 2nd string (B) - open
-      null,                     // 3rd string (G) - open
-      { fret: 2, finger: 2 },  // 4th string (D) - 2nd fret
-      { fret: 2, finger: 3 },  // 5th string (A) - 2nd fret
-      null                      // 6th string (E) - open
-    ]
+// Convert JSON chord data to internal format
+const convertChordData = (jsonChord: ChordJson): Chord => {
+  const stringData = [
+    jsonChord.string_1,
+    jsonChord.string_2,
+    jsonChord.string_3,
+    jsonChord.string_4,
+    jsonChord.string_5,
+    jsonChord.string_6
+  ]
+
+  const positions = stringData.map(str => {
+    if (!str.play) return 'x'
+    if (str.fret === 0) return null
+    return { fret: str.fret, finger: str.finger }
+  })
+
+  return {
+    name: jsonChord.name,
+    positions: positions as (ChordPosition | 'x' | null)[]
   }
 }
+
+// Load chords from JSON
+const chords: Record<string, Chord> = {}
+chordsData.forEach((jsonChord: ChordJson) => {
+  chords[jsonChord.name] = convertChordData(jsonChord)
+})
 
 const selectedChord = ref<string | null>(null)
 
