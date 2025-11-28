@@ -94,6 +94,7 @@
                 <div
                   v-if="isChordPosition(string, fret)"
                   class="chord-indicator"
+                  :class="getFingerColorClass(string, fret)"
                 >
                   <span>{{ getFingerNumber(string, fret) }}</span>
                 </div>
@@ -117,6 +118,33 @@
 
         <!-- Nut (left edge) -->
         <div class="nut"></div>
+      </div>
+    </div>
+
+    <!-- Finger color legend -->
+    <div v-if="currentChord" class="finger-legend">
+      <h3>Finger Colors:</h3>
+      <div class="legend-items">
+        <div class="legend-item">
+          <div class="legend-dot finger-thumb"></div>
+          <span>Thumb (T)</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot finger-index"></div>
+          <span>Index (1)</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot finger-middle"></div>
+          <span>Middle (2)</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot finger-ring"></div>
+          <span>Ring (3)</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot finger-pinky"></div>
+          <span>Pinky (4)</span>
+        </div>
       </div>
     </div>
 
@@ -252,6 +280,22 @@ const getFingerNumber = (string: number, _fret: number): number => {
   const position = currentChord.value.positions[string - 1]
   if (!position || position === 'x') return 0
   return (position as ChordPosition).finger
+}
+
+const getFingerColorClass = (string: number, _fret: number): string => {
+  if (!currentChord.value) return ''
+  const position = currentChord.value.positions[string - 1]
+  if (!position || position === 'x') return ''
+
+  const finger = (position as ChordPosition).finger
+  switch (finger) {
+    case 0: return 'finger-thumb'
+    case 1: return 'finger-index'
+    case 2: return 'finger-middle'
+    case 3: return 'finger-ring'
+    case 4: return 'finger-pinky'
+    default: return ''
+  }
 }
 
 const isStringFretPressed = (string: number, fret: number): boolean => {
@@ -452,6 +496,27 @@ const shouldShowInlay = (fret: number): boolean => {
   color: white;
 }
 
+/* Finger-specific colors */
+.chord-indicator.finger-thumb {
+  background-color: #78716c;
+}
+
+.chord-indicator.finger-index {
+  background-color: #3b82f6;
+}
+
+.chord-indicator.finger-middle {
+  background-color: #10b981;
+}
+
+.chord-indicator.finger-ring {
+  background-color: #f59e0b;
+}
+
+.chord-indicator.finger-pinky {
+  background-color: #a855f7;
+}
+
 /* User finger on chord position - green highlight behind chord */
 .user-finger-on-chord {
   width: 44px;
@@ -525,5 +590,67 @@ const shouldShowInlay = (fret: number): boolean => {
 .position-fret {
   margin-left: 0.5rem;
   color: #2563eb;
+}
+
+/* Finger legend */
+.finger-legend {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background-color: #f9fafb;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+.finger-legend h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 0.75rem;
+}
+
+.legend-items {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.legend-dot {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 3px solid white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.legend-dot.finger-thumb {
+  background-color: #78716c;
+}
+
+.legend-dot.finger-index {
+  background-color: #3b82f6;
+}
+
+.legend-dot.finger-middle {
+  background-color: #10b981;
+}
+
+.legend-dot.finger-ring {
+  background-color: #f59e0b;
+}
+
+.legend-dot.finger-pinky {
+  background-color: #a855f7;
+}
+
+.legend-item span {
+  font-size: 0.875rem;
+  color: #4b5563;
+  font-weight: 500;
 }
 </style>
