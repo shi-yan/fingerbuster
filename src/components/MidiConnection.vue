@@ -60,7 +60,7 @@
 
 <script setup lang="ts">
 import { onMounted } from 'vue'
-import { useMidi } from '../composables/useMidi'
+import { sharedMidi } from '../midi'
 
 const {
   connectedInputs,
@@ -71,7 +71,7 @@ const {
   connect,
   disconnect,
   checkSupport
-} = useMidi()
+} = sharedMidi
 
 const handleConnect = async () => {
   await connect()

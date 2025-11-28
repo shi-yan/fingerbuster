@@ -7,23 +7,6 @@
           <h2>MIDI Connection Status</h2>
           <p class="status-message">{{ statusMessage }}</p>
         </div>
-        <div class="button-container">
-          <button
-            v-if="!isConnected"
-            @click="connect"
-            class="btn-primary"
-            :disabled="!isSupported"
-          >
-            Connect MIDI
-          </button>
-          <button
-            v-else
-            @click="disconnect"
-            class="btn-danger"
-          >
-            Disconnect
-          </button>
-        </div>
       </div>
 
       <!-- Connected devices summary -->
@@ -32,6 +15,11 @@
           Connected to {{ connectedInputs.length }} device(s):
           {{ connectedInputs.map(i => i.name).join(', ') }}
         </p>
+      </div>
+
+      <!-- Not connected message -->
+      <div v-else class="not-connected-message">
+        <p>Please connect your MIDI device on the Connection page first.</p>
       </div>
     </div>
 
@@ -70,21 +58,16 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
-import { useMidi } from '../composables/useMidi'
+import { computed } from 'vue'
+import { sharedMidi } from '../midi'
 import FretBoard from './FretBoard.vue'
 
 const {
   connectedInputs,
   messages,
   fretPositions,
-  statusMessage,
-  isSupported,
-  isConnected,
-  connect,
-  disconnect,
-  checkSupport
-} = useMidi()
+  statusMessage
+} = sharedMidi
 
 const recentMessages = computed(() => {
   return messages.value.slice(-20).reverse()
@@ -105,10 +88,6 @@ const getMessageColorClass = (color: string): string => {
   }
   return colorMap[color] || 'text-gray'
 }
-
-onMounted(() => {
-  checkSupport()
-})
 </script>
 
 <style scoped>
@@ -158,6 +137,19 @@ onMounted(() => {
 .devices-summary p {
   font-size: 0.875rem;
   font-weight: 600;
+}
+
+.not-connected-message {
+  margin-top: 1rem;
+  padding: 1rem;
+  background-color: #fef3c7;
+  border-left: 4px solid #f59e0b;
+  border-radius: 4px;
+}
+
+.not-connected-message p {
+  font-size: 0.875rem;
+  color: #92400e;
 }
 
 .messages-card h3 {

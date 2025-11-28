@@ -1,6 +1,28 @@
 <template>
   <div class="fretboard-container card">
-    <h2>Fretboard</h2>
+    <div class="header-section">
+      <h2>Fretboard</h2>
+
+      <!-- Chord selection buttons -->
+      <div class="chord-buttons">
+        <button
+          v-for="chordName in Object.keys(chords)"
+          :key="chordName"
+          @click="selectChord(chordName)"
+          class="chord-button"
+          :class="{ active: selectedChord === chordName }"
+        >
+          {{ chordName }}
+        </button>
+        <button
+          @click="clearChord"
+          class="chord-button clear-button"
+          :class="{ active: selectedChord === null }"
+        >
+          Clear
+        </button>
+      </div>
+    </div>
 
     <!-- Fretboard visualization -->
     <div class="fretboard">
@@ -8,6 +30,7 @@
         <!-- Fret markers (top) -->
         <div class="fret-markers">
           <div class="string-label-spacer"></div>
+          <div class="play-indicator-spacer"></div>
           <div
             v-for="fret in 12"
             :key="`marker-${fret}`"
@@ -28,7 +51,14 @@
             <!-- String number label -->
             <div class="string-label">
               <span>
-                {{ getStringName(7 - string) }}
+                {{ getStringName(string) }}
+              </span>
+            </div>
+
+            <!-- Play indicator (X or O) -->
+            <div class="play-indicator">
+              <span v-if="currentChord">
+                {{ getPlayIndicator(string) }}
               </span>
             </div>
 
@@ -53,17 +83,31 @@
                   :class="{ 'last-fret': fret === 12 }"
                 ></div>
 
-                <!-- Finger position indicator -->
+                <!-- User finger position (gray semi-transparent) -->
                 <div
-                  v-if="isStringFretPressed(7 - string, fret)"
-                  class="finger-indicator"
+                  v-if="isStringFretPressed(string, fret) && !isChordPosition(string, fret)"
+                  class="user-finger-indicator"
                 >
-                  <span>{{ fret }}</span>
+                </div>
+
+                <!-- Chord position indicator (with finger number label) -->
+                <div
+                  v-if="isChordPosition(string, fret)"
+                  class="chord-indicator"
+                >
+                  <span>{{ getFingerNumber(string, fret) }}</span>
+                </div>
+
+                <!-- User finger on chord position (show both) -->
+                <div
+                  v-if="isStringFretPressed(string, fret) && isChordPosition(string, fret)"
+                  class="user-finger-on-chord"
+                >
                 </div>
 
                 <!-- Inlay markers -->
                 <div
-                  v-if="shouldShowInlay(fret) && string === 3"
+                  v-if="shouldShowInlay(fret) && string === 4"
                   class="inlay-marker"
                 ></div>
               </div>
@@ -99,21 +143,118 @@
 </template>
 
 <script setup lang="ts">
+import { ref, computed } from 'vue'
+
 interface Props {
   fretPositions: Map<number, number>
+}
+
+interface ChordPosition {
+  fret: number
+  finger: number
+}
+
+interface Chord {
+  name: string
+  positions: (ChordPosition | 'x' | null)[] // null = open string (0), 'x' = don't play
 }
 
 const props = defineProps<Props>()
 
 const fretWidth = 80
 
-const stringNames = ['E', 'A', 'D', 'G', 'B', 'e']
+// String names from 1st (high e) to 6th (low E)
+const stringNames = ['e', 'B', 'G', 'D', 'A', 'E']
+
+// Chord definitions
+// Array index 0 = string 1 (high e), index 5 = string 6 (low E)
+const chords: Record<string, Chord> = {
+  'G': {
+    name: 'G',
+    positions: [
+      { fret: 3, finger: 4 },  // 1st string (e) - 3rd fret
+      null,                     // 2nd string (B) - open
+      null,                     // 3rd string (G) - open
+      null,                     // 4th string (D) - open
+      { fret: 2, finger: 2 },  // 5th string (A) - 2nd fret
+      { fret: 3, finger: 3 }   // 6th string (E) - 3rd fret
+    ]
+  },
+  'C': {
+    name: 'C',
+    positions: [
+      null,                     // 1st string (e) - open
+      { fret: 1, finger: 1 },  // 2nd string (B) - 1st fret
+      null,                     // 3rd string (G) - open
+      { fret: 2, finger: 2 },  // 4th string (D) - 2nd fret
+      { fret: 3, finger: 3 },  // 5th string (A) - 3rd fret
+      'x'                       // 6th string (E) - don't play
+    ]
+  },
+  'D': {
+    name: 'D',
+    positions: [
+      { fret: 2, finger: 2 },  // 1st string (e) - 2nd fret
+      { fret: 3, finger: 3 },  // 2nd string (B) - 3rd fret
+      { fret: 2, finger: 1 },  // 3rd string (G) - 2nd fret
+      null,                     // 4th string (D) - open
+      'x',                      // 5th string (A) - don't play
+      'x'                       // 6th string (E) - don't play
+    ]
+  },
+  'Em': {
+    name: 'Em',
+    positions: [
+      null,                     // 1st string (e) - open
+      null,                     // 2nd string (B) - open
+      null,                     // 3rd string (G) - open
+      { fret: 2, finger: 2 },  // 4th string (D) - 2nd fret
+      { fret: 2, finger: 3 },  // 5th string (A) - 2nd fret
+      null                      // 6th string (E) - open
+    ]
+  }
+}
+
+const selectedChord = ref<string | null>(null)
+
+const currentChord = computed(() => {
+  return selectedChord.value ? chords[selectedChord.value] : null
+})
+
+const selectChord = (chordName: string) => {
+  selectedChord.value = chordName
+}
+
+const clearChord = () => {
+  selectedChord.value = null
+}
 
 const getStringName = (stringNumber: number): string => {
   if (stringNumber >= 1 && stringNumber <= 6) {
     return `${stringNumber} (${stringNames[stringNumber - 1]})`
   }
   return `${stringNumber}`
+}
+
+const getPlayIndicator = (stringNumber: number): string => {
+  if (!currentChord.value) return ''
+  const position = currentChord.value.positions[stringNumber - 1]
+  if (position === 'x') return 'X'
+  return 'O'
+}
+
+const isChordPosition = (string: number, fret: number): boolean => {
+  if (!currentChord.value) return false
+  const position = currentChord.value.positions[string - 1]
+  if (!position || position === 'x') return false
+  return (position as ChordPosition).fret === fret
+}
+
+const getFingerNumber = (string: number, _fret: number): number => {
+  if (!currentChord.value) return 0
+  const position = currentChord.value.positions[string - 1]
+  if (!position || position === 'x') return 0
+  return (position as ChordPosition).finger
 }
 
 const isStringFretPressed = (string: number, fret: number): boolean => {
@@ -131,12 +272,49 @@ const shouldShowInlay = (fret: number): boolean => {
   margin: 0 auto;
 }
 
+.header-section {
+  margin-bottom: 1.5rem;
+}
+
 .fretboard-container h2 {
   font-size: 1.5rem;
   font-weight: bold;
   color: #1f2937;
   text-align: center;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.chord-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.chord-button {
+  padding: 0.5rem 1rem;
+  background-color: #e5e7eb;
+  color: #1f2937;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.chord-button:hover {
+  background-color: #d1d5db;
+}
+
+.chord-button.active {
+  background-color: #4f46e5;
+  color: white;
+  border-color: #4338ca;
+}
+
+.chord-button.clear-button.active {
+  background-color: #6b7280;
+  border-color: #4b5563;
 }
 
 .fretboard {
@@ -158,6 +336,11 @@ const shouldShowInlay = (fret: number): boolean => {
 
 .string-label-spacer {
   width: 64px;
+  flex-shrink: 0;
+}
+
+.play-indicator-spacer {
+  width: 32px;
   flex-shrink: 0;
 }
 
@@ -189,6 +372,18 @@ const shouldShowInlay = (fret: number): boolean => {
 
 .string-label span {
   font-size: 0.875rem;
+  font-weight: bold;
+  color: #fef3c7;
+}
+
+.play-indicator {
+  width: 32px;
+  flex-shrink: 0;
+  text-align: center;
+}
+
+.play-indicator span {
+  font-size: 1.25rem;
   font-weight: bold;
   color: #fef3c7;
 }
@@ -229,10 +424,22 @@ const shouldShowInlay = (fret: number): boolean => {
   background-color: #d1d5db;
 }
 
-.finger-indicator {
+/* User finger position - gray semi-transparent */
+.user-finger-indicator {
   width: 32px;
   height: 32px;
-  background-color: #ef4444;
+  background-color: rgba(107, 114, 128, 0.5);
+  border-radius: 50%;
+  border: 2px solid rgba(107, 114, 128, 0.7);
+  z-index: 5;
+  position: absolute;
+}
+
+/* Chord position - with finger number */
+.chord-indicator {
+  width: 32px;
+  height: 32px;
+  background-color: #3b82f6;
   border-radius: 50%;
   border: 4px solid white;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
@@ -242,10 +449,21 @@ const shouldShowInlay = (fret: number): boolean => {
   justify-content: center;
 }
 
-.finger-indicator span {
-  font-size: 0.75rem;
+.chord-indicator span {
+  font-size: 0.875rem;
   font-weight: bold;
   color: white;
+}
+
+/* User finger on chord position - gray behind chord */
+.user-finger-on-chord {
+  width: 38px;
+  height: 38px;
+  background-color: rgba(34, 197, 94, 0.4);
+  border-radius: 50%;
+  border: 2px solid rgba(34, 197, 94, 0.6);
+  z-index: 8;
+  position: absolute;
 }
 
 .inlay-marker {
@@ -259,7 +477,7 @@ const shouldShowInlay = (fret: number): boolean => {
 
 .nut {
   position: absolute;
-  left: 64px;
+  left: 96px;
   top: 48px;
   width: 8px;
   background-color: #1f2937;
