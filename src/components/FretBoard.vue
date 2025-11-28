@@ -452,15 +452,16 @@ const shouldShowInlay = (fret: number): boolean => {
   color: white;
 }
 
-/* User finger on chord position - gray behind chord */
+/* User finger on chord position - green highlight behind chord */
 .user-finger-on-chord {
-  width: 38px;
-  height: 38px;
-  background-color: rgba(34, 197, 94, 0.4);
+  width: 44px;
+  height: 44px;
+  background-color: rgba(34, 197, 94, 0.3);
   border-radius: 50%;
-  border: 2px solid rgba(34, 197, 94, 0.6);
+  border: 5px solid rgba(34, 197, 94, 0.9);
   z-index: 8;
   position: absolute;
+  box-shadow: 0 0 10px rgba(34, 197, 94, 0.5);
 }
 
 .inlay-marker {

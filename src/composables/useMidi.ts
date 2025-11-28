@@ -73,11 +73,18 @@ export function useMidi() {
 
         // Update fret positions for guitar strings
         // Channel represents the string (1-6), data2 represents the fret
+        // Controller 49 = finger press, Controller 50 = finger release
         if (channel >= 1 && channel <= 6) {
-          if (data2 === 0) {
+          if (data1 === 49) {
+            // Finger press - set fret position
+            if (data2 === 0) {
+              fretPositions.value.delete(channel)
+            } else {
+              fretPositions.value.set(channel, data2)
+            }
+          } else if (data1 === 50) {
+            // Finger release - remove fret position
             fretPositions.value.delete(channel)
-          } else {
-            fretPositions.value.set(channel, data2)
           }
         }
         break
