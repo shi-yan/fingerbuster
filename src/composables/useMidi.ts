@@ -16,6 +16,11 @@ export interface FretPosition {
   fret: number
 }
 
+export interface PluckedNote {
+  string: number
+  note: number
+}
+
 export function useMidi() {
   const midiAccess = ref<MIDIAccess | null>(null)
   const connectedInputs = ref<MIDIInput[]>([])
@@ -23,6 +28,7 @@ export function useMidi() {
   const fretPositions = ref<Map<number, number>>(new Map())
   const stringsPlucked = ref<Set<number>>(new Set())
   const pluckOrder = ref<number[]>([]) // Track order of plucks
+  const pluckedNotes = ref<Map<number, number>>(new Map()) // string -> note value
   const statusMessage = ref('Checking for Web MIDI support...')
   const isSupported = ref(false)
   const isConnected = ref(false)
@@ -57,10 +63,14 @@ export function useMidi() {
           messageType = 'Note ON'
           detail = `Channel ${channel} | Note: ${data1} (Velocity: ${data2})`
           logColor = 'text-green-600'
-          // Track note-on events for guitar strings (channels 1-6)
+          // Track note-on events for guitar strings
+          // NOTE: For Note ON, channels are inverted:
+          // Channel 1 = 6th string, Channel 2 = 5th string, ..., Channel 6 = 1st string
           if (channel >= 1 && channel <= 6) {
-            stringsPlucked.value.add(channel)
-            pluckOrder.value.push(channel)
+            const guitarString = 7 - channel // Convert MIDI channel to guitar string (1-6)
+            stringsPlucked.value.add(guitarString)
+            pluckOrder.value.push(guitarString)
+            pluckedNotes.value.set(guitarString, data1) // Store the note value
           }
         } else {
           messageType = 'Note OFF'
@@ -238,6 +248,7 @@ export function useMidi() {
     fretPositions.value.clear()
     stringsPlucked.value.clear()
     pluckOrder.value = []
+    pluckedNotes.value.clear()
     isConnected.value = false
     statusMessage.value = "MIDI access is ready. Click Connect to find devices."
   }
@@ -245,6 +256,7 @@ export function useMidi() {
   const clearStringsPlucked = () => {
     stringsPlucked.value.clear()
     pluckOrder.value = []
+    pluckedNotes.value.clear()
   }
 
   const checkSupport = () => {
@@ -268,6 +280,7 @@ export function useMidi() {
     fretPositions,
     stringsPlucked,
     pluckOrder,
+    pluckedNotes,
     statusMessage,
     isSupported,
     isConnected,

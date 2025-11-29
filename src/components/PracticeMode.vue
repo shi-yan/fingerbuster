@@ -70,7 +70,26 @@ import FretBoard from './FretBoard.vue'
 import chordsData from '../data/chords.json'
 import { addChordTransition } from '../db/practiceDb'
 
-const { fretPositions, stringsPlucked, pluckOrder, clearStringsPlucked } = sharedMidi
+const { fretPositions, stringsPlucked, pluckOrder, pluckedNotes, clearStringsPlucked } = sharedMidi
+
+// Base MIDI notes for each string (open strings)
+const STRING_BASE_NOTES: Record<number, number> = {
+  6: 40, // 6th string (E)
+  5: 45, // 5th string (A)
+  4: 50, // 4th string (D)
+  3: 55, // 3rd string (G)
+  2: 59, // 2nd string (B)
+  1: 64  // 1st string (e)
+}
+
+// Calculate expected MIDI note for a string based on fret position
+const getExpectedNote = (guitarString: number, fret: number): number => {
+  const baseNote = STRING_BASE_NOTES[guitarString]
+  if (baseNote === undefined) {
+    throw new Error(`Invalid guitar string number: ${guitarString}`)
+  }
+  return baseNote + fret
+}
 
 // Practice chords
 const practiceChords = ['G', 'C', 'D', 'Em']
@@ -194,21 +213,32 @@ const checkChordMatch = (): boolean => {
     }
   }
 
-  // Check 3: No strings that shouldn't be played have been plucked
+  // Check 3: Validate plucked notes match expected notes
+  for (const string of targetChord.stringsToPlay) {
+    const fret = targetChord.positions.get(string) || 0 // 0 for open strings
+    const expectedNote = getExpectedNote(string, fret)
+    const actualNote = pluckedNotes.value.get(string)
+
+    if (actualNote !== expectedNote) {
+      return false // Wrong note! Fret position doesn't match pluck
+    }
+  }
+
+  // Check 4: No strings that shouldn't be played have been plucked
   for (const string of targetChord.stringsNotToPlay) {
     if (stringsPlucked.value.has(string)) {
       return false // Wrong! User plucked a string they shouldn't have
     }
   }
 
-  // Check 4: No extra strings are plucked (only the ones in stringsToPlay)
+  // Check 5: No extra strings are plucked (only the ones in stringsToPlay)
   for (const string of stringsPlucked.value) {
     if (!targetChord.stringsToPlay.has(string)) {
       return false
     }
   }
 
-  // Check 5: Strings are plucked in correct order (6 to 1)
+  // Check 6: Strings are plucked in correct order (6 to 1)
   if (!validatePluckOrder(targetChord.stringsToPlay)) {
     return false
   }
@@ -280,8 +310,8 @@ const nextChord = async (time: number) => {
   currentTime.value = 0
 }
 
-// Watch for chord matches (check both fret positions and plucks)
-watch([() => fretPositions.value, () => stringsPlucked.value], () => {
+// Watch for chord matches (check fret positions, plucks, and notes)
+watch([() => fretPositions.value, () => stringsPlucked.value, () => pluckedNotes.value], () => {
   if (isStarted.value && startTime.value) {
     if (checkChordMatch()) {
       const time = currentTime.value
