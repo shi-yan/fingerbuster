@@ -34,6 +34,7 @@
         <MidiConnection v-if="currentView === 'connection'" />
         <ChordPractice v-else-if="currentView === 'chord-practice'" />
         <PracticeMode v-else-if="currentView === 'practice-mode'" />
+        <ProgressChart v-else-if="currentView === 'progress-chart'" />
       </div>
     </div>
   </div>
@@ -44,8 +45,9 @@ import { ref } from 'vue'
 import MidiConnection from './components/MidiConnection.vue'
 import ChordPractice from './components/ChordPractice.vue'
 import PracticeMode from './components/PracticeMode.vue'
+import ProgressChart from './components/ProgressChart.vue'
 
-type ViewId = 'connection' | 'chord-practice' | 'practice-mode'
+type ViewId = 'connection' | 'chord-practice' | 'practice-mode' | 'progress-chart'
 
 interface MenuItem {
   id: ViewId
@@ -72,6 +74,12 @@ const menuItems: MenuItem[] = [
     label: 'Practice Mode',
     description: 'Timed chord practice',
     icon: '🎯'
+  },
+  {
+    id: 'progress-chart',
+    label: 'Progress Chart',
+    description: 'View your improvements',
+    icon: '📊'
   }
 ]
 
