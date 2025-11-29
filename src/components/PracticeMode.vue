@@ -68,8 +68,9 @@ import { ref, computed, watch } from 'vue'
 import { sharedMidi } from '../midi'
 import FretBoard from './FretBoard.vue'
 import chordsData from '../data/chords.json'
+import { addChordTransition } from '../db/practiceDb'
 
-const { fretPositions } = sharedMidi
+const { fretPositions, stringsPlucked, pluckOrder, clearStringsPlucked } = sharedMidi
 
 // Practice chords
 const practiceChords = ['G', 'C', 'D', 'Em']
@@ -115,41 +116,101 @@ const statistics = computed(() => {
   return stats
 })
 
-// Get chord definition
-const getChordDefinition = (chordName: string) => {
+// Get chord definition with strings to play and not play
+interface ChordDef {
+  positions: Map<number, number> // string -> fret for pressed strings
+  stringsToPlay: Set<number> // all strings that should be plucked
+  stringsNotToPlay: Set<number> // strings that should NOT be plucked (marked as 'x')
+}
+
+const getChordDefinition = (chordName: string): ChordDef | null => {
   const chordData = chordsData.find(c => c.name === chordName)
   if (!chordData) return null
 
   const positions = new Map<number, number>()
+  const stringsToPlay = new Set<number>()
+  const stringsNotToPlay = new Set<number>()
+
   for (let string = 1; string <= 6; string++) {
     const stringKey = `string_${string}` as keyof typeof chordData
     const stringData = chordData[stringKey] as { play: boolean; fret: number; finger: number }
-    if (stringData.play && stringData.fret > 0) {
-      positions.set(string, stringData.fret)
+
+    if (stringData.play) {
+      stringsToPlay.add(string)
+      if (stringData.fret > 0) {
+        positions.set(string, stringData.fret)
+      }
+    } else {
+      stringsNotToPlay.add(string)
     }
   }
-  return positions
+
+  return { positions, stringsToPlay, stringsNotToPlay }
 }
 
-// Check if user's finger positions match the current chord
+// Validate that strings are plucked in order from 6 to 1
+const validatePluckOrder = (stringsToPlay: Set<number>): boolean => {
+  // Get only the plucks that are part of this chord
+  const relevantPlucks = pluckOrder.value.filter(s => stringsToPlay.has(s))
+
+  // Create sorted array of strings that should be played (6 to 1)
+  const expectedOrder = Array.from(stringsToPlay).sort((a, b) => b - a)
+
+  // Remove duplicates from relevant plucks (in case user plucked the same string twice)
+  const uniquePlucks = [...new Set(relevantPlucks)]
+
+  // Check if uniquePlucks matches expectedOrder
+  if (uniquePlucks.length !== expectedOrder.length) {
+    return false
+  }
+
+  for (let i = 0; i < uniquePlucks.length; i++) {
+    if (uniquePlucks[i] !== expectedOrder[i]) {
+      return false
+    }
+  }
+
+  return true
+}
+
+// Check if user's finger positions and plucks match the current chord
 const checkChordMatch = (): boolean => {
   if (!currentChordName.value) return false
 
   const targetChord = getChordDefinition(currentChordName.value)
   if (!targetChord) return false
 
-  // Check if all required positions are pressed
-  for (const [string, fret] of targetChord.entries()) {
+  // Check 1: All required fret positions are pressed
+  for (const [string, fret] of targetChord.positions.entries()) {
     if (fretPositions.value.get(string) !== fret) {
       return false
     }
   }
 
-  // Check if no extra strings are pressed
-  for (const [string, _fret] of fretPositions.value.entries()) {
-    if (!targetChord.has(string)) {
+  // Check 2: All strings that should be played have been plucked (note-on)
+  for (const string of targetChord.stringsToPlay) {
+    if (!stringsPlucked.value.has(string)) {
       return false
     }
+  }
+
+  // Check 3: No strings that shouldn't be played have been plucked
+  for (const string of targetChord.stringsNotToPlay) {
+    if (stringsPlucked.value.has(string)) {
+      return false // Wrong! User plucked a string they shouldn't have
+    }
+  }
+
+  // Check 4: No extra strings are plucked (only the ones in stringsToPlay)
+  for (const string of stringsPlucked.value) {
+    if (!targetChord.stringsToPlay.has(string)) {
+      return false
+    }
+  }
+
+  // Check 5: Strings are plucked in correct order (6 to 1)
+  if (!validatePluckOrder(targetChord.stringsToPlay)) {
+    return false
   }
 
   return true
@@ -186,7 +247,7 @@ const stopPractice = () => {
 }
 
 // Move to next chord
-const nextChord = (time: number) => {
+const nextChord = async (time: number) => {
   // Record time for current chord
   const chord = currentChordName.value
   if (!chord) return
@@ -195,6 +256,16 @@ const nextChord = (time: number) => {
     chordTimes.value[chord] = []
   }
   chordTimes.value[chord].push(time)
+
+  // Save transition to database
+  try {
+    await addChordTransition(chord, time)
+  } catch (error) {
+    console.error('Error saving chord transition:', error)
+  }
+
+  // Clear plucked strings for next chord
+  clearStringsPlucked()
 
   // Move to next chord
   currentChordIndex.value++
@@ -209,9 +280,9 @@ const nextChord = (time: number) => {
   currentTime.value = 0
 }
 
-// Watch for chord matches
-watch(() => fretPositions.value, () => {
-  if (isStarted.value && startTime.value && fretPositions.value.size > 0) {
+// Watch for chord matches (check both fret positions and plucks)
+watch([() => fretPositions.value, () => stringsPlucked.value], () => {
+  if (isStarted.value && startTime.value) {
     if (checkChordMatch()) {
       const time = currentTime.value
       nextChord(time)

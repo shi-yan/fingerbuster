@@ -21,6 +21,8 @@ export function useMidi() {
   const connectedInputs = ref<MIDIInput[]>([])
   const messages = ref<MidiMessage[]>([])
   const fretPositions = ref<Map<number, number>>(new Map())
+  const stringsPlucked = ref<Set<number>>(new Set())
+  const pluckOrder = ref<number[]>([]) // Track order of plucks
   const statusMessage = ref('Checking for Web MIDI support...')
   const isSupported = ref(false)
   const isConnected = ref(false)
@@ -55,6 +57,11 @@ export function useMidi() {
           messageType = 'Note ON'
           detail = `Channel ${channel} | Note: ${data1} (Velocity: ${data2})`
           logColor = 'text-green-600'
+          // Track note-on events for guitar strings (channels 1-6)
+          if (channel >= 1 && channel <= 6) {
+            stringsPlucked.value.add(channel)
+            pluckOrder.value.push(channel)
+          }
         } else {
           messageType = 'Note OFF'
           detail = `Channel ${channel} | Note: ${data1}`
@@ -229,8 +236,15 @@ export function useMidi() {
     })
     connectedInputs.value = []
     fretPositions.value.clear()
+    stringsPlucked.value.clear()
+    pluckOrder.value = []
     isConnected.value = false
     statusMessage.value = "MIDI access is ready. Click Connect to find devices."
+  }
+
+  const clearStringsPlucked = () => {
+    stringsPlucked.value.clear()
+    pluckOrder.value = []
   }
 
   const checkSupport = () => {
@@ -252,11 +266,14 @@ export function useMidi() {
     connectedInputs,
     messages,
     fretPositions,
+    stringsPlucked,
+    pluckOrder,
     statusMessage,
     isSupported,
     isConnected,
     connect,
     disconnect,
+    clearStringsPlucked,
     checkSupport
   }
 }
