@@ -33,6 +33,52 @@
       :selectedChord="isStarted ? currentChordName : null"
     />
 
+    <!-- Debug Display -->
+    <div v-if="isStarted" class="debug-display card">
+      <h3>Debug Information</h3>
+
+      <div class="debug-section">
+        <h4>Plucked Strings ({{ stringsPlucked.size }})</h4>
+        <div v-if="stringsPlucked.size === 0" class="empty-message">
+          No strings plucked yet
+        </div>
+        <div v-else class="debug-list">
+          <div
+            v-for="string in Array.from(stringsPlucked)"
+            :key="`plucked-${string}`"
+            class="debug-item"
+          >
+            <span class="debug-label">String {{ string }}:</span>
+            <span class="debug-value">Note {{ pluckedNotes.get(string) }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="debug-section">
+        <h4>Pluck Order</h4>
+        <div v-if="pluckOrder.length === 0" class="empty-message">
+          No plucks recorded
+        </div>
+        <div v-else class="debug-value">
+          {{ pluckOrder.join(' → ') }}
+        </div>
+      </div>
+
+      <div class="debug-section" v-if="currentChordName">
+        <h4>Target Chord: {{ currentChordName }}</h4>
+        <div class="debug-list">
+          <div class="debug-item">
+            <span class="debug-label">Required Strings:</span>
+            <span class="debug-value">{{ Array.from(getChordDefinition(currentChordName)?.stringsToPlay || []).sort((a, b) => b - a).join(', ') }}</span>
+          </div>
+          <div class="debug-item">
+            <span class="debug-label">Skip Strings:</span>
+            <span class="debug-value">{{ Array.from(getChordDefinition(currentChordName)?.stringsNotToPlay || []).sort((a, b) => b - a).join(', ') || 'None' }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Statistics Display -->
     <div v-if="statistics.length > 0" class="statistics card">
       <h3>Statistics</h3>
@@ -199,50 +245,86 @@ const checkChordMatch = (): boolean => {
   const targetChord = getChordDefinition(currentChordName.value)
   if (!targetChord) return false
 
+  console.group(`🎸 Checking Chord: ${currentChordName.value}`)
+
   // Check 1: All required fret positions are pressed
+  console.log('Check 1: Fret Positions')
   for (const [string, fret] of targetChord.positions.entries()) {
-    if (fretPositions.value.get(string) !== fret) {
+    const actual = fretPositions.value.get(string)
+    console.log(`  String ${string}: Expected fret ${fret}, Actual fret ${actual}`)
+    if (actual !== fret) {
+      console.log(`  ❌ FAILED: String ${string} not pressed at fret ${fret}`)
+      console.groupEnd()
       return false
     }
   }
+  console.log('  ✅ All fret positions correct')
 
   // Check 2: All strings that should be played have been plucked (note-on)
+  console.log('Check 2: Strings Plucked')
+  console.log(`  Required strings: ${Array.from(targetChord.stringsToPlay).join(', ')}`)
+  console.log(`  Plucked strings: ${Array.from(stringsPlucked.value).join(', ')}`)
   for (const string of targetChord.stringsToPlay) {
     if (!stringsPlucked.value.has(string)) {
+      console.log(`  ❌ FAILED: String ${string} not plucked`)
+      console.groupEnd()
       return false
     }
   }
+  console.log('  ✅ All required strings plucked')
 
   // Check 3: Validate plucked notes match expected notes
+  console.log('Check 3: Note Values')
   for (const string of targetChord.stringsToPlay) {
     const fret = targetChord.positions.get(string) || 0 // 0 for open strings
     const expectedNote = getExpectedNote(string, fret)
     const actualNote = pluckedNotes.value.get(string)
 
+    console.log(`  String ${string} (fret ${fret}): Expected note ${expectedNote}, Actual note ${actualNote}`)
     if (actualNote !== expectedNote) {
+      console.log(`  ❌ FAILED: Wrong note on string ${string}`)
+      console.groupEnd()
       return false // Wrong note! Fret position doesn't match pluck
     }
   }
+  console.log('  ✅ All note values correct')
 
   // Check 4: No strings that shouldn't be played have been plucked
+  console.log('Check 4: Wrong Strings')
+  console.log(`  Should NOT play: ${Array.from(targetChord.stringsNotToPlay).join(', ') || 'None'}`)
   for (const string of targetChord.stringsNotToPlay) {
     if (stringsPlucked.value.has(string)) {
+      console.log(`  ❌ FAILED: String ${string} should not be plucked but was`)
+      console.groupEnd()
       return false // Wrong! User plucked a string they shouldn't have
     }
   }
+  console.log('  ✅ No wrong strings plucked')
 
   // Check 5: No extra strings are plucked (only the ones in stringsToPlay)
+  console.log('Check 5: Extra Strings')
   for (const string of stringsPlucked.value) {
     if (!targetChord.stringsToPlay.has(string)) {
+      console.log(`  ❌ FAILED: Extra string ${string} plucked`)
+      console.groupEnd()
       return false
     }
   }
+  console.log('  ✅ No extra strings plucked')
 
   // Check 6: Strings are plucked in correct order (6 to 1)
+  console.log('Check 6: Pluck Order')
+  console.log(`  Expected order: ${Array.from(targetChord.stringsToPlay).sort((a, b) => b - a).join(' → ')}`)
+  console.log(`  Actual order: ${pluckOrder.value.filter(s => targetChord.stringsToPlay.has(s)).join(' → ')}`)
   if (!validatePluckOrder(targetChord.stringsToPlay)) {
+    console.log('  ❌ FAILED: Wrong pluck order')
+    console.groupEnd()
     return false
   }
+  console.log('  ✅ Correct pluck order')
 
+  console.log('🎉 ALL CHECKS PASSED!')
+  console.groupEnd()
   return true
 }
 
@@ -435,5 +517,67 @@ watch([() => fretPositions.value, () => stringsPlucked.value, () => pluckedNotes
 
 .stat-value.best {
   color: #10b981;
+}
+
+/* Debug Display */
+.debug-display {
+  padding: 1.5rem;
+  background-color: #fffbeb;
+  border: 2px solid #fbbf24;
+}
+
+.debug-display h3 {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: #92400e;
+  margin: 0 0 1rem 0;
+}
+
+.debug-section {
+  margin-bottom: 1.5rem;
+}
+
+.debug-section:last-child {
+  margin-bottom: 0;
+}
+
+.debug-section h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #78350f;
+  margin: 0 0 0.5rem 0;
+}
+
+.debug-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.debug-item {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.5rem;
+  background-color: #fef3c7;
+  border-radius: 4px;
+}
+
+.debug-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #92400e;
+}
+
+.debug-value {
+  font-size: 0.875rem;
+  color: #451a03;
+  font-family: monospace;
+}
+
+.debug-display .empty-message {
+  font-size: 0.875rem;
+  color: #78350f;
+  font-style: italic;
 }
 </style>
