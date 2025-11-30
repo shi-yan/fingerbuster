@@ -68,9 +68,12 @@ export function useMidi() {
           // Channel 1 = 6th string, Channel 2 = 5th string, ..., Channel 6 = 1st string
           if (channel >= 1 && channel <= 6) {
             const guitarString = 7 - channel // Convert MIDI channel to guitar string (1-6)
+            console.log(`🎵 Note ON - MIDI Channel ${channel} → Guitar String ${guitarString}, Note ${data1}`)
             stringsPlucked.value.add(guitarString)
             pluckOrder.value.push(guitarString)
             pluckedNotes.value.set(guitarString, data1) // Store the note value
+            console.log(`   Plucked strings: ${Array.from(stringsPlucked.value).join(', ')}`)
+            console.log(`   Pluck order: ${pluckOrder.value.join(' → ')}`)
           }
         } else {
           messageType = 'Note OFF'
