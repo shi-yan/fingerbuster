@@ -33,6 +33,27 @@ export function useMidi() {
   const isSupported = ref(false)
   const isConnected = ref(false)
 
+  // Auto-clear timer for plucked strings
+  let autoClearTimer: number | null = null
+  const AUTO_CLEAR_DELAY = 1000 // 1 second
+
+  const resetAutoClearTimer = () => {
+    // Clear existing timer
+    if (autoClearTimer !== null) {
+      clearTimeout(autoClearTimer)
+    }
+
+    // Set new timer to auto-clear after delay
+    autoClearTimer = window.setTimeout(() => {
+      if (stringsPlucked.value.size > 0) {
+        console.log('⏰ Auto-clearing plucked strings after 1 second of inactivity')
+        stringsPlucked.value.clear()
+        pluckOrder.value = []
+        pluckedNotes.value.clear()
+      }
+    }, AUTO_CLEAR_DELAY)
+  }
+
   const addMessage = (message: MidiMessage) => {
     messages.value.push(message)
     if (messages.value.length > 100) {
@@ -74,6 +95,9 @@ export function useMidi() {
             pluckedNotes.value.set(guitarString, data1) // Store the note value
             console.log(`   Plucked strings: ${Array.from(stringsPlucked.value).join(', ')}`)
             console.log(`   Pluck order: ${pluckOrder.value.join(' → ')}`)
+
+            // Reset auto-clear timer
+            resetAutoClearTimer()
           }
         } else {
           messageType = 'Note OFF'
@@ -252,6 +276,13 @@ export function useMidi() {
     stringsPlucked.value.clear()
     pluckOrder.value = []
     pluckedNotes.value.clear()
+
+    // Clear auto-clear timer
+    if (autoClearTimer !== null) {
+      clearTimeout(autoClearTimer)
+      autoClearTimer = null
+    }
+
     isConnected.value = false
     statusMessage.value = "MIDI access is ready. Click Connect to find devices."
   }
@@ -260,6 +291,12 @@ export function useMidi() {
     stringsPlucked.value.clear()
     pluckOrder.value = []
     pluckedNotes.value.clear()
+
+    // Clear auto-clear timer
+    if (autoClearTimer !== null) {
+      clearTimeout(autoClearTimer)
+      autoClearTimer = null
+    }
   }
 
   const checkSupport = () => {
