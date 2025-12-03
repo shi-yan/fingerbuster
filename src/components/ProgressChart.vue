@@ -122,16 +122,15 @@ const getChordColor = (chord: string) => {
 
 // Transform data for stacked area chart
 interface ChartDataPoint {
-  date: Date
-  [key: string]: number | Date // chord names as keys with average times as values
+  date: string
+  [key: string]: number | string // chord names as keys with average times as values
 }
 
 const transformData = (): ChartDataPoint[] => {
   const dataByDate = new Map<string, ChartDataPoint>()
 
   progressData.value.forEach(dailyData => {
-    const date = new Date(dailyData.dateId)
-    const dataPoint: ChartDataPoint = { date }
+    const dataPoint: ChartDataPoint = { date: dailyData.dateId }
 
     // Calculate average time for each chord
     const chordTimes = new Map<string, number[]>()
@@ -150,7 +149,7 @@ const transformData = (): ChartDataPoint[] => {
     dataByDate.set(dailyData.dateId, dataPoint)
   })
 
-  return Array.from(dataByDate.values()).sort((a, b) => a.date.getTime() - b.date.getTime())
+  return Array.from(dataByDate.values()).sort((a, b) => a.date.localeCompare(b.date))
 }
 
 const drawChart = () => {
@@ -189,8 +188,8 @@ const drawChart = () => {
   const series = stack(data)
 
   // Scales
-  const x = d3.scaleTime()
-    .domain(d3.extent(data, d => d.date) as [Date, Date])
+  const x = d3.scalePoint()
+    .domain(data.map(d => d.date))
     .range([marginLeft, width - marginRight])
 
   const y = d3.scaleLinear()
@@ -200,7 +199,7 @@ const drawChart = () => {
 
   // Area generator
   const area = d3.area<d3.SeriesPoint<ChartDataPoint>>()
-    .x(d => x(d.data.date))
+    .x(d => x(d.data.date) || 0)
     .y0(d => y(d[0]))
     .y1(d => y(d[1]))
 
@@ -237,13 +236,10 @@ const drawChart = () => {
       .attr('text-anchor', 'start')
       .text('↑ Time (seconds)'))
 
-  // X-axis with date formatting - one tick per data point
-  const dateFormat = d3.timeFormat('%Y-%m-%d')
+  // X-axis - displays date strings directly
   svg.append('g')
     .attr('transform', `translate(0,${height - marginBottom})`)
     .call(d3.axisBottom(x)
-      .tickValues(data.map(d => d.date))
-      .tickFormat((d) => dateFormat(d as Date))
       .tickSizeOuter(0))
 
   // Add zero line
