@@ -238,11 +238,12 @@ const drawChart = () => {
       .text('↑ Time (seconds)'))
 
   // X-axis with date formatting
+  const dateFormat = d3.timeFormat('%Y-%m-%d')
   svg.append('g')
     .attr('transform', `translate(0,${height - marginBottom})`)
     .call(d3.axisBottom(x)
       .ticks(width / 80)
-      .tickFormat(d3.timeFormat('%Y-%m-%d'))
+      .tickFormat((d) => dateFormat(d as Date))
       .tickSizeOuter(0))
 
   // Add zero line
