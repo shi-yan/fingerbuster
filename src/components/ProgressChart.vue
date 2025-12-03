@@ -30,6 +30,32 @@
         </div>
       </div>
     </div>
+
+    <div v-if="hasData" class="daily-averages-container card">
+      <h3>Daily Averages</h3>
+      <div class="daily-averages-list">
+        <div
+          v-for="day in dailyAverages"
+          :key="day.date"
+          class="daily-average-item"
+        >
+          <div class="date-header">{{ day.date }}</div>
+          <div class="averages-grid">
+            <div
+              v-for="avg in day.averages"
+              :key="avg.chord"
+              class="chord-average"
+            >
+              <span class="chord-name">{{ avg.chord }}:</span>
+              <span class="chord-time">{{ avg.time.toFixed(2) }}s</span>
+            </div>
+          </div>
+          <div class="overall-average">
+            Overall: {{ day.overallAverage.toFixed(2) }}s
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -45,6 +71,47 @@ const progressData = ref<DailyProgress[]>([])
 const chordNames = ref<string[]>([])
 
 const hasData = computed(() => progressData.value.length > 0)
+
+// Calculate daily averages for display
+interface DailyAverage {
+  date: string
+  averages: { chord: string; time: number }[]
+  overallAverage: number
+}
+
+const dailyAverages = computed((): DailyAverage[] => {
+  return progressData.value
+    .map(dailyData => {
+      const chordTimes = new Map<string, number[]>()
+
+      // Group times by chord
+      dailyData.transitions.forEach(t => {
+        if (!chordTimes.has(t.chord)) {
+          chordTimes.set(t.chord, [])
+        }
+        chordTimes.get(t.chord)!.push(t.time)
+      })
+
+      // Calculate averages for each chord
+      const averages = Array.from(chordTimes.entries())
+        .map(([chord, times]) => ({
+          chord,
+          time: times.reduce((a, b) => a + b, 0) / times.length
+        }))
+        .sort((a, b) => a.chord.localeCompare(b.chord))
+
+      // Calculate overall average for the day
+      const allTimes = dailyData.transitions.map(t => t.time)
+      const overallAverage = allTimes.reduce((a, b) => a + b, 0) / allTimes.length
+
+      return {
+        date: dailyData.dateId,
+        averages,
+        overallAverage
+      }
+    })
+    .sort((a, b) => b.date.localeCompare(a.date)) // Most recent first
+})
 
 // Color scale for chords
 const chordColorScale = d3.scaleOrdinal(d3.schemeTableau10)
@@ -170,10 +237,13 @@ const drawChart = () => {
       .attr('text-anchor', 'start')
       .text('↑ Time (seconds)'))
 
-  // X-axis
+  // X-axis with date formatting
   svg.append('g')
     .attr('transform', `translate(0,${height - marginBottom})`)
-    .call(d3.axisBottom(x).ticks(width / 80).tickSizeOuter(0))
+    .call(d3.axisBottom(x)
+      .ticks(width / 80)
+      .tickFormat(d3.timeFormat('%Y-%m-%d'))
+      .tickSizeOuter(0))
 
   // Add zero line
   svg.append('line')
@@ -295,5 +365,71 @@ onMounted(() => {
   font-size: 0.875rem;
   color: #374151;
   font-weight: 500;
+}
+
+.daily-averages-container {
+  padding: 1.5rem;
+}
+
+.daily-averages-container h3 {
+  font-size: 1.125rem;
+  font-weight: bold;
+  color: #1f2937;
+  margin: 0 0 1rem 0;
+}
+
+.daily-averages-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.daily-average-item {
+  padding: 1rem;
+  background-color: #f9fafb;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+.date-header {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #d1d5db;
+}
+
+.averages-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.chord-average {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.875rem;
+}
+
+.chord-name {
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.chord-time {
+  color: #1f2937;
+  font-weight: 600;
+  font-family: 'Courier New', monospace;
+}
+
+.overall-average {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #059669;
+  padding-top: 0.5rem;
+  border-top: 1px solid #d1d5db;
 }
 </style>
