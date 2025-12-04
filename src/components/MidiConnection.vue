@@ -44,8 +44,16 @@
     </div>
 
     <div class="section">
-      <h2>MIDI Message Log</h2>
-      <div class="log scrollable">
+      <div class="section-header">
+        <h2>MIDI Message Log</h2>
+        <button
+          @click="handleClearMessages"
+          class="btn-secondary"
+        >
+          Clear Logs
+        </button>
+      </div>
+      <div ref="logContainer" class="log scrollable">
         <p
           v-for="(message, index) in messages"
           :key="index"
@@ -59,7 +67,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, ref, watch, nextTick } from 'vue'
 import { sharedMidi } from '../midi'
 
 const {
@@ -70,11 +78,18 @@ const {
   isConnected,
   connect,
   disconnect,
+  clearMessages,
   checkSupport
 } = sharedMidi
 
+const logContainer = ref<HTMLDivElement | null>(null)
+
 const handleConnect = async () => {
   await connect()
+}
+
+const handleClearMessages = () => {
+  clearMessages()
 }
 
 const getMessageColorClass = (color: string): string => {
@@ -92,6 +107,14 @@ const getMessageColorClass = (color: string): string => {
   }
   return colorMap[color] || 'text-gray'
 }
+
+// Auto-scroll to bottom when new messages arrive
+watch(messages, async () => {
+  await nextTick()
+  if (logContainer.value) {
+    logContainer.value.scrollTop = logContainer.value.scrollHeight
+  }
+}, { deep: true })
 
 onMounted(() => {
   checkSupport()
@@ -147,13 +170,20 @@ onMounted(() => {
   margin-bottom: 2rem;
 }
 
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #e5e7eb;
+  margin-bottom: 1rem;
+}
+
 .section h2 {
   font-size: 1.25rem;
   font-weight: bold;
   color: #1f2937;
-  padding-bottom: 0.5rem;
-  border-bottom: 2px solid #e5e7eb;
-  margin-bottom: 1rem;
+  margin: 0;
 }
 
 .device-list {

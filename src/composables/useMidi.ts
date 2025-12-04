@@ -299,6 +299,10 @@ export function useMidi() {
     }
   }
 
+  const clearMessages = () => {
+    messages.value = []
+  }
+
   const checkSupport = () => {
     if (!navigator.requestMIDIAccess) {
       isSupported.value = false
@@ -327,6 +331,7 @@ export function useMidi() {
     connect,
     disconnect,
     clearStringsPlucked,
+    clearMessages,
     checkSupport
   }
 }

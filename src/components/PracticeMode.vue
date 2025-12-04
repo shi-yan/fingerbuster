@@ -147,6 +147,10 @@ const startTime = ref<number | null>(null)
 const currentTime = ref(0)
 const timer = ref<number | null>(null)
 
+// String tracking for validation
+const stringsPlayedMap = ref<Map<number, boolean>>(new Map())
+const stringPlayCount = ref(0)
+
 // Statistics
 interface ChordStat {
   chord: string
@@ -213,29 +217,21 @@ const getChordDefinition = (chordName: string): ChordDef | null => {
   return { positions, stringsToPlay, stringsNotToPlay }
 }
 
-// Validate that strings are plucked in order from 6 to 1
-const validatePluckOrder = (stringsToPlay: Set<number>): boolean => {
-  // Get only the plucks that are part of this chord
-  const relevantPlucks = pluckOrder.value.filter(s => stringsToPlay.has(s))
-
-  // Create sorted array of strings that should be played (6 to 1)
-  const expectedOrder = Array.from(stringsToPlay).sort((a, b) => b - a)
-
-  // Remove duplicates from relevant plucks (in case user plucked the same string twice)
-  const uniquePlucks = [...new Set(relevantPlucks)]
-
-  // Check if uniquePlucks matches expectedOrder
-  if (uniquePlucks.length !== expectedOrder.length) {
-    return false
+// Initialize the strings played map for a chord
+const initializeStringsPlayedMap = (stringsToPlay: Set<number>) => {
+  stringsPlayedMap.value = new Map()
+  stringPlayCount.value = 0
+  for (const string of stringsToPlay) {
+    stringsPlayedMap.value.set(string, false)
   }
+}
 
-  for (let i = 0; i < uniquePlucks.length; i++) {
-    if (uniquePlucks[i] !== expectedOrder[i]) {
-      return false
-    }
+// Reset the strings played map
+const resetStringsPlayedMap = () => {
+  for (const [string] of stringsPlayedMap.value) {
+    stringsPlayedMap.value.set(string, false)
   }
-
-  return true
+  stringPlayCount.value = 0
 }
 
 // Check if user's finger positions and plucks match the current chord
@@ -244,6 +240,11 @@ const checkChordMatch = (): boolean => {
 
   const targetChord = getChordDefinition(currentChordName.value)
   if (!targetChord) return false
+
+  // Initialize the map if it's empty
+  if (stringsPlayedMap.value.size === 0) {
+    initializeStringsPlayedMap(targetChord.stringsToPlay)
+  }
 
   console.group(`🎸 Checking Chord: ${currentChordName.value}`)
 
@@ -260,22 +261,35 @@ const checkChordMatch = (): boolean => {
   }
   console.log('  ✅ All fret positions correct')
 
-  // Check 2: All strings that should be played have been plucked (note-on)
-  console.log('Check 2: Strings Plucked')
+  // Check 2: Process plucked strings with Map-based validation
+  console.log('Check 2: String Plucking Validation')
   console.log(`  Required strings: ${Array.from(targetChord.stringsToPlay).join(', ')}`)
   console.log(`  Plucked strings: ${Array.from(stringsPlucked.value).join(', ')}`)
-  for (const string of targetChord.stringsToPlay) {
-    if (!stringsPlucked.value.has(string)) {
-      console.log(`  ❌ FAILED: String ${string} not plucked`)
+  console.log(`  Current play count: ${stringPlayCount.value}/${targetChord.stringsToPlay.size}`)
+
+  // Check for wrong strings (strings that shouldn't be played)
+  for (const string of stringsPlucked.value) {
+    // If string is not in the map at all, it's a wrong string
+    if (!stringsPlayedMap.value.has(string)) {
+      console.log(`  ❌ FAILED: Wrong string ${string} plucked (not in chord)`)
+      console.log('  Resetting and starting over...')
+      resetStringsPlayedMap()
+      clearStringsPlucked()
       console.groupEnd()
       return false
     }
+
+    // If string is in the map but hasn't been marked as played yet
+    if (stringsPlayedMap.value.get(string) === false) {
+      stringsPlayedMap.value.set(string, true)
+      stringPlayCount.value++
+      console.log(`  ✓ String ${string} played for first time (count: ${stringPlayCount.value})`)
+    }
   }
-  console.log('  ✅ All required strings plucked')
 
   // Check 3: Validate plucked notes match expected notes
   console.log('Check 3: Note Values')
-  for (const string of targetChord.stringsToPlay) {
+  for (const string of stringsPlucked.value) {
     const fret = targetChord.positions.get(string) || 0 // 0 for open strings
     const expectedNote = getExpectedNote(string, fret)
     const actualNote = pluckedNotes.value.get(string)
@@ -283,49 +297,27 @@ const checkChordMatch = (): boolean => {
     console.log(`  String ${string} (fret ${fret}): Expected note ${expectedNote}, Actual note ${actualNote}`)
     if (actualNote !== expectedNote) {
       console.log(`  ❌ FAILED: Wrong note on string ${string}`)
-      console.groupEnd()
-      return false // Wrong note! Fret position doesn't match pluck
-    }
-  }
-  console.log('  ✅ All note values correct')
-
-  // Check 4: No strings that shouldn't be played have been plucked
-  console.log('Check 4: Wrong Strings')
-  console.log(`  Should NOT play: ${Array.from(targetChord.stringsNotToPlay).join(', ') || 'None'}`)
-  for (const string of targetChord.stringsNotToPlay) {
-    if (stringsPlucked.value.has(string)) {
-      console.log(`  ❌ FAILED: String ${string} should not be plucked but was`)
-      console.groupEnd()
-      return false // Wrong! User plucked a string they shouldn't have
-    }
-  }
-  console.log('  ✅ No wrong strings plucked')
-
-  // Check 5: No extra strings are plucked (only the ones in stringsToPlay)
-  console.log('Check 5: Extra Strings')
-  for (const string of stringsPlucked.value) {
-    if (!targetChord.stringsToPlay.has(string)) {
-      console.log(`  ❌ FAILED: Extra string ${string} plucked`)
+      console.log('  Resetting and starting over...')
+      resetStringsPlayedMap()
+      clearStringsPlucked()
       console.groupEnd()
       return false
     }
   }
-  console.log('  ✅ No extra strings plucked')
+  console.log('  ✅ All note values correct')
 
-  // Check 6: Strings are plucked in correct order (6 to 1)
-  console.log('Check 6: Pluck Order')
-  console.log(`  Expected order: ${Array.from(targetChord.stringsToPlay).sort((a, b) => b - a).join(' → ')}`)
-  console.log(`  Actual order: ${pluckOrder.value.filter(s => targetChord.stringsToPlay.has(s)).join(' → ')}`)
-  if (!validatePluckOrder(targetChord.stringsToPlay)) {
-    console.log('  ❌ FAILED: Wrong pluck order')
+  // Check 4: Have all required strings been played?
+  console.log('Check 4: Completion Check')
+  if (stringPlayCount.value === targetChord.stringsToPlay.size) {
+    console.log(`  ✅ All ${targetChord.stringsToPlay.size} strings played!`)
+    console.log('🎉 ALL CHECKS PASSED!')
     console.groupEnd()
-    return false
+    return true
   }
-  console.log('  ✅ Correct pluck order')
 
-  console.log('🎉 ALL CHECKS PASSED!')
+  console.log(`  ⏳ Waiting for more strings (${stringPlayCount.value}/${targetChord.stringsToPlay.size})`)
   console.groupEnd()
-  return true
+  return false
 }
 
 // Update timer
@@ -341,6 +333,10 @@ const startPractice = () => {
   currentChordIndex.value = 0
   startTime.value = Date.now()
   currentTime.value = 0
+
+  // Reset string tracking
+  stringsPlayedMap.value.clear()
+  stringPlayCount.value = 0
 
   // Start timer
   timer.value = window.setInterval(updateTimer, 50)
@@ -378,6 +374,10 @@ const nextChord = async (time: number) => {
 
   // Clear plucked strings for next chord
   clearStringsPlucked()
+
+  // Reset the strings played map for next chord
+  stringsPlayedMap.value.clear()
+  stringPlayCount.value = 0
 
   // Move to next chord
   currentChordIndex.value++
