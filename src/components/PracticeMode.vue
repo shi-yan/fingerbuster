@@ -3,6 +3,23 @@
     <div class="practice-header card">
       <h2>Practice Mode</h2>
       <div class="practice-controls">
+        <div class="progression-selector">
+          <label for="progression">Chord Progression:</label>
+          <select
+            id="progression"
+            v-model="selectedProgression"
+            :disabled="isStarted"
+            class="progression-dropdown"
+          >
+            <option
+              v-for="(prog, index) in progressions"
+              :key="index"
+              :value="index"
+            >
+              {{ prog.name }}
+            </option>
+          </select>
+        </div>
         <button
           v-if="!isStarted"
           @click="startPractice"
@@ -26,11 +43,15 @@
         <p>Progress: {{ currentChordIndex + 1 }} / {{ practiceChords.length }}</p>
         <p v-if="startTime">Time: {{ currentTime.toFixed(2) }}s</p>
       </div>
+      <div class="progression-display">
+        <p>Progression: {{ progressions[selectedProgression]?.name || 'Unknown' }}</p>
+      </div>
     </div>
 
     <FretBoard
       :fretPositions="fretPositions"
       :selectedChord="isStarted ? currentChordName : null"
+      :stringStatus="isStarted ? stringStatusMap : undefined"
     />
 
     <!-- Debug Display -->
@@ -137,8 +158,40 @@ const getExpectedNote = (guitarString: number, fret: number): number => {
   return baseNote + fret
 }
 
-// Practice chords
-const practiceChords = ['G', 'C', 'D', 'Em']
+// Chord progressions
+interface Progression {
+  name: string
+  chords: string[]
+}
+
+const progressions: Progression[] = [
+  {
+    name: 'Current Order (G → C → D → Em)',
+    chords: ['G', 'C', 'D', 'Em']
+  },
+  {
+    name: 'Pop Anthem (I-V-vi-IV): G → D → Em → C',
+    chords: ['G', 'D', 'Em', 'C']
+  },
+  {
+    name: 'Emotional Ballad (vi-IV-I-V): Em → C → G → D',
+    chords: ['Em', 'C', 'G', 'D']
+  },
+  {
+    name: '50s Doo-Wop (I-vi-IV-V): G → Em → C → D',
+    chords: ['G', 'Em', 'C', 'D']
+  },
+  {
+    name: 'Folk/Country (I-IV-I-V): G → C → G → D',
+    chords: ['G', 'C', 'G', 'D']
+  }
+]
+
+const selectedProgression = ref(0)
+
+const practiceChords = computed(() => {
+  return progressions[selectedProgression.value]?.chords || []
+})
 
 // Practice state
 const isStarted = ref(false)
@@ -163,12 +216,57 @@ interface ChordStat {
 const chordTimes = ref<Record<string, number[]>>({})
 
 const currentChordName = computed(() => {
-  return practiceChords[currentChordIndex.value] || ''
+  return practiceChords.value[currentChordIndex.value] || ''
+})
+
+// Calculate string status for visualization
+const stringStatusMap = computed(() => {
+  if (!isStarted.value || !currentChordName.value) {
+    return new Map<number, 'correct' | 'wrong' | 'unplayed'>()
+  }
+
+  const targetChord = getChordDefinition(currentChordName.value)
+  if (!targetChord) {
+    return new Map<number, 'correct' | 'wrong' | 'unplayed'>()
+  }
+
+  const statusMap = new Map<number, 'correct' | 'wrong' | 'unplayed'>()
+
+  // For each string in the chord
+  for (const string of targetChord.stringsToPlay) {
+    // Check if this string has been plucked
+    const hasBeenPlucked = stringsPlucked.value.has(string)
+
+    if (!hasBeenPlucked) {
+      // Not played yet
+      statusMap.set(string, 'unplayed')
+    } else {
+      // Check if the note is correct
+      const fret = targetChord.positions.get(string) || 0 // 0 for open strings
+      const expectedNote = getExpectedNote(string, fret)
+      const actualNote = pluckedNotes.value.get(string)
+
+      if (actualNote === expectedNote) {
+        statusMap.set(string, 'correct')
+      } else {
+        statusMap.set(string, 'wrong')
+      }
+    }
+  }
+
+  // Check for wrong strings (strings that shouldn't be played but were)
+  for (const string of stringsPlucked.value) {
+    if (!targetChord.stringsToPlay.has(string)) {
+      statusMap.set(string, 'wrong')
+    }
+  }
+
+  return statusMap
 })
 
 const statistics = computed(() => {
   const stats: ChordStat[] = []
-  for (const chord of practiceChords) {
+  for (const chord of practiceChords.value) {
     const times = chordTimes.value[chord] || []
     if (times.length > 0) {
       const average = times.reduce((a, b) => a + b, 0) / times.length
@@ -382,7 +480,7 @@ const nextChord = async (time: number) => {
   // Move to next chord
   currentChordIndex.value++
 
-  if (currentChordIndex.value >= practiceChords.length) {
+  if (currentChordIndex.value >= practiceChords.value.length) {
     // Loop back to start
     currentChordIndex.value = 0
   }
@@ -429,6 +527,53 @@ watch([() => fretPositions.value, () => stringsPlucked.value, () => pluckedNotes
 .practice-controls {
   display: flex;
   gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.progression-selector {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.progression-selector label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #4b5563;
+}
+
+.progression-dropdown {
+  padding: 0.5rem;
+  border: 2px solid #d1d5db;
+  border-radius: 6px;
+  background-color: white;
+  color: #1f2937;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 300px;
+}
+
+.progression-dropdown:hover:not(:disabled) {
+  border-color: #4f46e5;
+}
+
+.progression-dropdown:disabled {
+  background-color: #f3f4f6;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.progression-display {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.progression-display p {
+  font-size: 0.875rem;
+  color: #6b7280;
 }
 
 .current-chord-display {

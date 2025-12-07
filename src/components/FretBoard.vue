@@ -50,7 +50,10 @@
           >
             <!-- Play indicator (X or O) -->
             <div class="play-indicator">
-              <span v-if="currentChord">
+              <span
+                v-if="currentChord"
+                :class="getPlayIndicatorClass(string)"
+              >
                 {{ getPlayIndicator(string) }}
               </span>
             </div>
@@ -177,6 +180,7 @@ import chordsData from '../data/chords.json'
 interface Props {
   fretPositions: Map<number, number>
   selectedChord?: string | null  // Optional: for practice mode
+  stringStatus?: Map<number, 'correct' | 'wrong' | 'unplayed'>  // Optional: for practice mode string visualization
 }
 
 interface ChordPosition {
@@ -278,6 +282,15 @@ const getPlayIndicator = (stringNumber: number): string => {
   const position = currentChord.value.positions[stringNumber - 1]
   if (position === 'x') return 'X'
   return 'O'
+}
+
+const getPlayIndicatorClass = (stringNumber: number): string => {
+  if (!props.stringStatus) return ''
+  const status = props.stringStatus.get(stringNumber)
+  if (status === 'correct') return 'indicator-correct'
+  if (status === 'wrong') return 'indicator-wrong'
+  if (status === 'unplayed') return 'indicator-unplayed'
+  return ''
 }
 
 const isChordPosition = (string: number, fret: number): boolean => {
@@ -439,6 +452,20 @@ const shouldShowInlay = (fret: number): boolean => {
   font-size: 1.25rem;
   font-weight: bold;
   color: #fef3c7;
+}
+
+.play-indicator span.indicator-correct {
+  color: #22c55e;
+  text-shadow: 0 0 5px rgba(34, 197, 94, 0.5);
+}
+
+.play-indicator span.indicator-wrong {
+  color: #ef4444;
+  text-shadow: 0 0 5px rgba(239, 68, 68, 0.5);
+}
+
+.play-indicator span.indicator-unplayed {
+  color: #9ca3af;
 }
 
 .frets-row {
