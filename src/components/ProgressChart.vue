@@ -1,8 +1,27 @@
 <template>
   <div class="progress-chart">
     <div class="chart-header card">
-      <h2>Progress Chart</h2>
-      <p class="chart-description">Daily chord transition time improvements</p>
+      <div class="header-content">
+        <div>
+          <h2>Progress Chart</h2>
+          <p class="chart-description">Daily chord transition time improvements</p>
+        </div>
+        <div class="data-controls">
+          <button @click="exportData" class="btn-export" title="Export data to JSON">
+            Export Data
+          </button>
+          <label for="import-file" class="btn-import" title="Import data from JSON">
+            Import Data
+            <input
+              id="import-file"
+              type="file"
+              accept="application/json"
+              @change="importData"
+              style="display: none"
+            />
+          </label>
+        </div>
+      </div>
     </div>
 
     <div class="chart-container card">
@@ -62,7 +81,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import * as d3 from 'd3'
-import { getAllProgress, type DailyProgress } from '../db/practiceDb'
+import { getAllProgress, type DailyProgress, db } from '../db/practiceDb'
 
 const chartRef = ref<HTMLElement | null>(null)
 const loading = ref(true)
@@ -273,6 +292,100 @@ const loadData = async () => {
   }
 }
 
+// Export data to JSON file
+const exportData = async () => {
+  try {
+    const data = await getAllProgress()
+
+    // Create filename with timestamp
+    const now = new Date()
+    const timestamp = now.toISOString().replace(/[:.]/g, '-').slice(0, -5)
+    const filename = `fingerbuster-backup-${timestamp}.json`
+
+    // Create JSON blob
+    const jsonStr = JSON.stringify(data, null, 2)
+    const blob = new Blob([jsonStr], { type: 'application/json' })
+
+    // Create download link and trigger download
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = filename
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+
+    console.log('Data exported successfully')
+  } catch (err) {
+    console.error('Error exporting data:', err)
+    error.value = `Failed to export data: ${(err as Error).message}`
+  }
+}
+
+// Import data from JSON file with merge logic
+const importData = async (event: Event) => {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+
+  if (!file) return
+
+  try {
+    const text = await file.text()
+    const importedData: DailyProgress[] = JSON.parse(text)
+
+    // Validate imported data
+    if (!Array.isArray(importedData)) {
+      throw new Error('Invalid data format: expected an array')
+    }
+
+    // Get existing data
+    const existingData = await getAllProgress()
+    const existingMap = new Map(existingData.map(d => [d.dateId, d]))
+
+    // Merge logic
+    for (const importedDay of importedData) {
+      if (!importedDay.dateId || !importedDay.transitions) {
+        console.warn('Skipping invalid entry:', importedDay)
+        continue
+      }
+
+      const existing = existingMap.get(importedDay.dateId)
+
+      if (existing) {
+        // Merge: combine transitions and recalculate
+        const combinedTransitions = [...existing.transitions, ...importedDay.transitions]
+
+        await db.dailyProgress.put({
+          dateId: importedDay.dateId,
+          transitions: combinedTransitions
+        })
+
+        console.log(`Merged data for ${importedDay.dateId}`)
+      } else {
+        // New date: add it
+        await db.dailyProgress.add({
+          dateId: importedDay.dateId,
+          transitions: importedDay.transitions
+        })
+
+        console.log(`Added new data for ${importedDay.dateId}`)
+      }
+    }
+
+    // Reload the chart
+    await loadData()
+    console.log('Data imported and merged successfully')
+
+    // Clear the input
+    input.value = ''
+  } catch (err) {
+    console.error('Error importing data:', err)
+    error.value = `Failed to import data: ${(err as Error).message}`
+    input.value = ''
+  }
+}
+
 onMounted(() => {
   loadData()
 })
@@ -291,6 +404,14 @@ onMounted(() => {
   padding: 1.5rem;
 }
 
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
 .chart-header h2 {
   font-size: 1.5rem;
   font-weight: bold;
@@ -302,6 +423,41 @@ onMounted(() => {
   font-size: 0.875rem;
   color: #6b7280;
   margin: 0;
+}
+
+.data-controls {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.btn-export,
+.btn-import {
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+}
+
+.btn-export {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.btn-export:hover {
+  background-color: #2563eb;
+}
+
+.btn-import {
+  background-color: #10b981;
+  color: white;
+  display: inline-block;
+}
+
+.btn-import:hover {
+  background-color: #059669;
 }
 
 .chart-container {
