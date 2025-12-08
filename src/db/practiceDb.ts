@@ -10,13 +10,28 @@ export interface DailyProgress {
   transitions: ChordTransition[]
 }
 
+export interface StringPluck {
+  string: number // 1-6 (guitar string number)
+  time: number // in seconds
+}
+
+export interface DailyPluckingProgress {
+  dateId: string // format: YYYY-MM-DD (e.g., "2025-11-28")
+  plucks: StringPluck[]
+}
+
 export class PracticeDatabase extends Dexie {
   dailyProgress!: Table<DailyProgress>
+  dailyPluckingProgress!: Table<DailyPluckingProgress>
 
   constructor() {
     super('PracticeDatabase')
     this.version(1).stores({
       dailyProgress: 'dateId'
+    })
+    this.version(2).stores({
+      dailyProgress: 'dateId',
+      dailyPluckingProgress: 'dateId'
     })
   }
 }
@@ -63,4 +78,29 @@ export async function getProgressRange(startDate: string, endDate: string): Prom
 // Helper function to get all progress
 export async function getAllProgress(): Promise<DailyProgress[]> {
   return await db.dailyProgress.toArray()
+}
+
+// Helper function to add a string pluck
+export async function addStringPluck(string: number, time: number) {
+  const dateId = getTodayDateId()
+
+  // Get existing progress for today
+  const existing = await db.dailyPluckingProgress.get(dateId)
+
+  if (existing) {
+    // Append to existing plucks
+    existing.plucks.push({ string, time })
+    await db.dailyPluckingProgress.put(existing)
+  } else {
+    // Create new entry for today
+    await db.dailyPluckingProgress.add({
+      dateId,
+      plucks: [{ string, time }]
+    })
+  }
+}
+
+// Helper function to get all plucking progress
+export async function getAllPluckingProgress(): Promise<DailyPluckingProgress[]> {
+  return await db.dailyPluckingProgress.toArray()
 }

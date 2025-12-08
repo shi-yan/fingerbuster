@@ -4,7 +4,7 @@
       <div class="header-content">
         <div>
           <h2>Progress Chart</h2>
-          <p class="chart-description">Daily chord transition time improvements</p>
+          <p class="chart-description">Track your practice improvements</p>
         </div>
         <div class="data-controls">
           <button @click="exportData" class="btn-export" title="Export data to JSON">
@@ -24,53 +24,129 @@
       </div>
     </div>
 
-    <div class="chart-container card">
-      <div v-if="loading" class="loading-message">Loading chart data...</div>
-      <div v-else-if="error" class="error-message">{{ error }}</div>
-      <div v-else-if="!hasData" class="empty-message">
-        No practice data yet. Start practicing to see your progress!
-      </div>
-      <div v-else ref="chartRef" class="chart"></div>
+    <!-- Tab Navigation -->
+    <div class="tab-navigation card">
+      <button
+        @click="activeTab = 'chord'"
+        class="tab-button"
+        :class="{ active: activeTab === 'chord' }"
+      >
+        Chord Practice
+      </button>
+      <button
+        @click="activeTab = 'plucking'"
+        class="tab-button"
+        :class="{ active: activeTab === 'plucking' }"
+      >
+        Plucking Practice
+      </button>
     </div>
 
-    <div v-if="hasData" class="legend-container card">
-      <h3>Chord Legend</h3>
-      <div class="legend-items">
-        <div
-          v-for="chord in chordNames"
-          :key="chord"
-          class="legend-item"
-        >
+    <!-- Chord Practice Tab -->
+    <div v-if="activeTab === 'chord'">
+      <div class="chart-container card">
+        <div v-if="loading" class="loading-message">Loading chart data...</div>
+        <div v-else-if="error" class="error-message">{{ error }}</div>
+        <div v-else-if="!hasData" class="empty-message">
+          No practice data yet. Start practicing to see your progress!
+        </div>
+        <div v-else ref="chartRef" class="chart"></div>
+      </div>
+
+      <div v-if="hasData" class="legend-container card">
+        <h3>Chord Legend</h3>
+        <div class="legend-items">
           <div
-            class="legend-color"
-            :style="{ backgroundColor: getChordColor(chord) }"
-          ></div>
-          <span>{{ chord }}</span>
+            v-for="chord in chordNames"
+            :key="chord"
+            class="legend-item"
+          >
+            <div
+              class="legend-color"
+              :style="{ backgroundColor: getChordColor(chord) }"
+            ></div>
+            <span>{{ chord }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="hasData" class="daily-averages-container card">
+        <h3>Daily Averages</h3>
+        <div class="daily-averages-list">
+          <div
+            v-for="day in dailyAverages"
+            :key="day.date"
+            class="daily-average-item"
+          >
+            <div class="date-header">{{ day.date }}</div>
+            <div class="averages-grid">
+              <div
+                v-for="avg in day.averages"
+                :key="avg.chord"
+                class="chord-average"
+              >
+                <span class="chord-name">{{ avg.chord }}:</span>
+                <span class="chord-time">{{ avg.time.toFixed(2) }}s</span>
+              </div>
+            </div>
+            <div class="overall-average">
+              Overall: {{ day.overallAverage.toFixed(2) }}s
+            </div>
+          </div>
         </div>
       </div>
     </div>
 
-    <div v-if="hasData" class="daily-averages-container card">
-      <h3>Daily Averages</h3>
-      <div class="daily-averages-list">
-        <div
-          v-for="day in dailyAverages"
-          :key="day.date"
-          class="daily-average-item"
-        >
-          <div class="date-header">{{ day.date }}</div>
-          <div class="averages-grid">
+    <!-- Plucking Practice Tab -->
+    <div v-if="activeTab === 'plucking'">
+      <div class="chart-container card">
+        <div v-if="loading" class="loading-message">Loading chart data...</div>
+        <div v-else-if="error" class="error-message">{{ error }}</div>
+        <div v-else-if="!hasPluckingData" class="empty-message">
+          No plucking practice data yet. Start practicing to see your progress!
+        </div>
+        <div v-else ref="pluckingChartRef" class="chart"></div>
+      </div>
+
+      <div v-if="hasPluckingData" class="legend-container card">
+        <h3>String Legend</h3>
+        <div class="legend-items">
+          <div
+            v-for="string in stringNumbers"
+            :key="string"
+            class="legend-item"
+          >
             <div
-              v-for="avg in day.averages"
-              :key="avg.chord"
-              class="chord-average"
-            >
-              <span class="chord-name">{{ avg.chord }}:</span>
-              <span class="chord-time">{{ avg.time.toFixed(2) }}s</span>
-            </div>
+              class="legend-color"
+              :style="{ backgroundColor: getStringColor(string) }"
+            ></div>
+            <span>String {{ string }} ({{ getStringName(string) }})</span>
           </div>
-          <div class="overall-average">
-            Overall: {{ day.overallAverage.toFixed(2) }}s
+        </div>
+      </div>
+
+      <div v-if="hasPluckingData" class="daily-averages-container card">
+        <h3>Daily Averages</h3>
+        <div class="daily-averages-list">
+          <div
+            v-for="day in pluckingDailyAverages"
+            :key="day.date"
+            class="daily-average-item"
+          >
+            <div class="date-header">{{ day.date }}</div>
+            <div class="averages-grid">
+              <div
+                v-for="avg in day.averages"
+                :key="avg.string"
+                class="chord-average"
+              >
+                <span class="chord-name">String {{ avg.string }}:</span>
+                <span class="chord-time">{{ avg.time.toFixed(2) }}s</span>
+              </div>
+            </div>
+            <div class="overall-average">
+              Overall: {{ day.overallAverage.toFixed(2) }}s
+            </div>
           </div>
         </div>
       </div>
@@ -79,17 +155,41 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import * as d3 from 'd3'
-import { getAllProgress, type DailyProgress, db } from '../db/practiceDb'
+import { getAllProgress, getAllPluckingProgress, type DailyProgress, type DailyPluckingProgress, db } from '../db/practiceDb'
 
+// Tab state
+const activeTab = ref<'chord' | 'plucking'>('chord')
+
+// Chord practice data
 const chartRef = ref<HTMLElement | null>(null)
 const loading = ref(true)
 const error = ref<string | null>(null)
 const progressData = ref<DailyProgress[]>([])
 const chordNames = ref<string[]>([])
 
+// Plucking practice data
+const pluckingChartRef = ref<HTMLElement | null>(null)
+const pluckingProgressData = ref<DailyPluckingProgress[]>([])
+const stringNumbers = ref<number[]>([])
+
 const hasData = computed(() => progressData.value.length > 0)
+const hasPluckingData = computed(() => pluckingProgressData.value.length > 0)
+
+// String names
+const STRING_NAMES: Record<number, string> = {
+  1: 'e (high)',
+  2: 'B',
+  3: 'G',
+  4: 'D',
+  5: 'A',
+  6: 'E (low)'
+}
+
+const getStringName = (string: number): string => {
+  return STRING_NAMES[string] || `String ${string}`
+}
 
 // Calculate daily averages for display
 interface DailyAverage {
@@ -132,11 +232,59 @@ const dailyAverages = computed((): DailyAverage[] => {
     .sort((a, b) => b.date.localeCompare(a.date)) // Most recent first
 })
 
+// Calculate plucking daily averages
+interface PluckingDailyAverage {
+  date: string
+  averages: { string: number; time: number }[]
+  overallAverage: number
+}
+
+const pluckingDailyAverages = computed((): PluckingDailyAverage[] => {
+  return pluckingProgressData.value
+    .map(dailyData => {
+      const stringTimes = new Map<number, number[]>()
+
+      // Group times by string
+      dailyData.plucks.forEach(p => {
+        if (!stringTimes.has(p.string)) {
+          stringTimes.set(p.string, [])
+        }
+        stringTimes.get(p.string)!.push(p.time)
+      })
+
+      // Calculate averages for each string
+      const averages = Array.from(stringTimes.entries())
+        .map(([string, times]) => ({
+          string,
+          time: times.reduce((a, b) => a + b, 0) / times.length
+        }))
+        .sort((a, b) => a.string - b.string)
+
+      // Calculate overall average for the day
+      const allTimes = dailyData.plucks.map(p => p.time)
+      const overallAverage = allTimes.reduce((a, b) => a + b, 0) / allTimes.length
+
+      return {
+        date: dailyData.dateId,
+        averages,
+        overallAverage
+      }
+    })
+    .sort((a, b) => b.date.localeCompare(a.date)) // Most recent first
+})
+
 // Color scale for chords
 const chordColorScale = d3.scaleOrdinal(d3.schemeTableau10)
 
 const getChordColor = (chord: string) => {
   return chordColorScale(chord)
+}
+
+// Color scale for strings
+const stringColorScale = d3.scaleOrdinal(d3.schemeCategory10)
+
+const getStringColor = (string: number) => {
+  return stringColorScale(string.toString())
 }
 
 // Transform data for stacked area chart
@@ -271,20 +419,156 @@ const drawChart = () => {
     .attr('stroke-width', 1)
 }
 
+// Transform plucking data for stacked area chart
+const transformPluckingData = (): ChartDataPoint[] => {
+  const dataByDate = new Map<string, ChartDataPoint>()
+
+  pluckingProgressData.value.forEach(dailyData => {
+    const dataPoint: ChartDataPoint = { date: dailyData.dateId }
+
+    // Calculate average time for each string
+    const stringTimes = new Map<string, number[]>()
+    dailyData.plucks.forEach(p => {
+      const stringKey = p.string.toString()
+      if (!stringTimes.has(stringKey)) {
+        stringTimes.set(stringKey, [])
+      }
+      stringTimes.get(stringKey)!.push(p.time)
+    })
+
+    stringTimes.forEach((times, stringKey) => {
+      const avg = times.reduce((a, b) => a + b, 0) / times.length
+      dataPoint[stringKey] = avg
+    })
+
+    dataByDate.set(dailyData.dateId, dataPoint)
+  })
+
+  return Array.from(dataByDate.values()).sort((a, b) => a.date.localeCompare(b.date))
+}
+
+const drawPluckingChart = () => {
+  if (!pluckingChartRef.value) return
+
+  // Clear previous chart
+  d3.select(pluckingChartRef.value).selectAll('*').remove()
+
+  const data = transformPluckingData()
+  if (data.length === 0) return
+
+  // Extract all unique string numbers
+  const allStrings = new Set<string>()
+  data.forEach(d => {
+    Object.keys(d).forEach(key => {
+      if (key !== 'date') {
+        allStrings.add(key)
+      }
+    })
+  })
+  stringNumbers.value = Array.from(allStrings).map(s => parseInt(s)).sort((a, b) => a - b)
+
+  // Chart dimensions
+  const width = 928
+  const height = 500
+  const marginTop = 20
+  const marginRight = 20
+  const marginBottom = 40
+  const marginLeft = 60
+
+  // Create stacked data
+  const stack = d3.stack<ChartDataPoint>()
+    .keys(stringNumbers.value.map(s => s.toString()))
+    .value((d, key) => (d[key] as number) || 0)
+
+  const series = stack(data)
+
+  // Scales
+  const x = d3.scalePoint()
+    .domain(data.map(d => d.date))
+    .range([marginLeft, width - marginRight])
+
+  const y = d3.scaleLinear()
+    .domain([0, d3.max(series, d => d3.max(d, d => d[1])) || 10])
+    .nice()
+    .range([height - marginBottom, marginTop])
+
+  // Area generator
+  const area = d3.area<d3.SeriesPoint<ChartDataPoint>>()
+    .x(d => x(d.data.date) || 0)
+    .y0(d => y(d[0]))
+    .y1(d => y(d[1]))
+
+  // Create SVG
+  const svg = d3.select(pluckingChartRef.value)
+    .append('svg')
+    .attr('width', width)
+    .attr('height', height)
+    .attr('viewBox', [0, 0, width, height])
+    .attr('style', 'max-width: 100%; height: auto;')
+
+  // Add areas
+  svg.append('g')
+    .selectAll('path')
+    .data(series)
+    .join('path')
+    .attr('fill', d => stringColorScale(d.key))
+    .attr('d', area)
+    .append('title')
+    .text(d => `String ${d.key}`)
+
+  // Y-axis
+  svg.append('g')
+    .attr('transform', `translate(${marginLeft},0)`)
+    .call(d3.axisLeft(y).ticks(height / 80))
+    .call(g => g.select('.domain').remove())
+    .call(g => g.selectAll('.tick line').clone()
+      .attr('x2', width - marginLeft - marginRight)
+      .attr('stroke-opacity', 0.1))
+    .call(g => g.append('text')
+      .attr('x', -marginLeft)
+      .attr('y', 15)
+      .attr('fill', 'currentColor')
+      .attr('text-anchor', 'start')
+      .text('↑ Time (seconds)'))
+
+  // X-axis - displays date strings directly
+  svg.append('g')
+    .attr('transform', `translate(0,${height - marginBottom})`)
+    .call(d3.axisBottom(x)
+      .tickSizeOuter(0))
+
+  // Add zero line
+  svg.append('line')
+    .attr('x1', marginLeft)
+    .attr('x2', width - marginRight)
+    .attr('y1', y(0))
+    .attr('y2', y(0))
+    .attr('stroke', 'currentColor')
+    .attr('stroke-width', 1)
+}
+
 const loadData = async () => {
   loading.value = true
   error.value = null
 
   try {
-    const data = await getAllProgress()
-    progressData.value = data
+    // Load both chord and plucking data
+    const [chordData, pluckingData] = await Promise.all([
+      getAllProgress(),
+      getAllPluckingProgress()
+    ])
 
-    if (data.length > 0) {
-      // Wait for next tick to ensure chartRef is available
-      setTimeout(() => {
+    progressData.value = chordData
+    pluckingProgressData.value = pluckingData
+
+    // Draw the appropriate chart based on active tab
+    setTimeout(() => {
+      if (activeTab.value === 'chord' && chordData.length > 0) {
         drawChart()
-      }, 0)
-    }
+      } else if (activeTab.value === 'plucking' && pluckingData.length > 0) {
+        drawPluckingChart()
+      }
+    }, 0)
   } catch (err) {
     error.value = `Failed to load progress data: ${(err as Error).message}`
   } finally {
@@ -292,10 +576,31 @@ const loadData = async () => {
   }
 }
 
+// Watch for tab changes to redraw charts
+watch(activeTab, (newTab) => {
+  setTimeout(() => {
+    if (newTab === 'chord' && progressData.value.length > 0) {
+      drawChart()
+    } else if (newTab === 'plucking' && pluckingProgressData.value.length > 0) {
+      drawPluckingChart()
+    }
+  }, 0)
+})
+
 // Export data to JSON file
 const exportData = async () => {
   try {
-    const data = await getAllProgress()
+    const [chordData, pluckingData] = await Promise.all([
+      getAllProgress(),
+      getAllPluckingProgress()
+    ])
+
+    // Combine both data types
+    const exportedData = {
+      chordPractice: chordData,
+      pluckingPractice: pluckingData,
+      version: 1
+    }
 
     // Create filename with timestamp
     const now = new Date()
@@ -303,7 +608,7 @@ const exportData = async () => {
     const filename = `fingerbuster-backup-${timestamp}.json`
 
     // Create JSON blob
-    const jsonStr = JSON.stringify(data, null, 2)
+    const jsonStr = JSON.stringify(exportedData, null, 2)
     const blob = new Blob([jsonStr], { type: 'application/json' })
 
     // Create download link and trigger download
@@ -332,48 +637,88 @@ const importData = async (event: Event) => {
 
   try {
     const text = await file.text()
-    const importedData: DailyProgress[] = JSON.parse(text)
+    const parsed = JSON.parse(text)
 
-    // Validate imported data
-    if (!Array.isArray(importedData)) {
-      throw new Error('Invalid data format: expected an array')
+    let chordDataToImport: DailyProgress[] = []
+    let pluckingDataToImport: DailyPluckingProgress[] = []
+
+    // Check if it's the new format (object with version) or old format (array)
+    if (Array.isArray(parsed)) {
+      // Old format: only chord practice data
+      chordDataToImport = parsed
+    } else if (parsed.chordPractice || parsed.pluckingPractice) {
+      // New format: object with both types
+      chordDataToImport = parsed.chordPractice || []
+      pluckingDataToImport = parsed.pluckingPractice || []
+    } else {
+      throw new Error('Invalid data format')
     }
 
-    // Get existing data
-    const existingData = await getAllProgress()
-    const existingMap = new Map(existingData.map(d => [d.dateId, d]))
+    // Import chord practice data
+    if (chordDataToImport.length > 0) {
+      const existingChordData = await getAllProgress()
+      const existingChordMap = new Map(existingChordData.map(d => [d.dateId, d]))
 
-    // Merge logic
-    for (const importedDay of importedData) {
-      if (!importedDay.dateId || !importedDay.transitions) {
-        console.warn('Skipping invalid entry:', importedDay)
-        continue
-      }
+      for (const importedDay of chordDataToImport) {
+        if (!importedDay.dateId || !importedDay.transitions) {
+          console.warn('Skipping invalid chord entry:', importedDay)
+          continue
+        }
 
-      const existing = existingMap.get(importedDay.dateId)
+        const existing = existingChordMap.get(importedDay.dateId)
 
-      if (existing) {
-        // Merge: combine transitions and recalculate
-        const combinedTransitions = [...existing.transitions, ...importedDay.transitions]
-
-        await db.dailyProgress.put({
-          dateId: importedDay.dateId,
-          transitions: combinedTransitions
-        })
-
-        console.log(`Merged data for ${importedDay.dateId}`)
-      } else {
-        // New date: add it
-        await db.dailyProgress.add({
-          dateId: importedDay.dateId,
-          transitions: importedDay.transitions
-        })
-
-        console.log(`Added new data for ${importedDay.dateId}`)
+        if (existing) {
+          // Merge: combine transitions
+          const combinedTransitions = [...existing.transitions, ...importedDay.transitions]
+          await db.dailyProgress.put({
+            dateId: importedDay.dateId,
+            transitions: combinedTransitions
+          })
+          console.log(`Merged chord data for ${importedDay.dateId}`)
+        } else {
+          // New date: add it
+          await db.dailyProgress.add({
+            dateId: importedDay.dateId,
+            transitions: importedDay.transitions
+          })
+          console.log(`Added new chord data for ${importedDay.dateId}`)
+        }
       }
     }
 
-    // Reload the chart
+    // Import plucking practice data
+    if (pluckingDataToImport.length > 0) {
+      const existingPluckingData = await getAllPluckingProgress()
+      const existingPluckingMap = new Map(existingPluckingData.map(d => [d.dateId, d]))
+
+      for (const importedDay of pluckingDataToImport) {
+        if (!importedDay.dateId || !importedDay.plucks) {
+          console.warn('Skipping invalid plucking entry:', importedDay)
+          continue
+        }
+
+        const existing = existingPluckingMap.get(importedDay.dateId)
+
+        if (existing) {
+          // Merge: combine plucks
+          const combinedPlucks = [...existing.plucks, ...importedDay.plucks]
+          await db.dailyPluckingProgress.put({
+            dateId: importedDay.dateId,
+            plucks: combinedPlucks
+          })
+          console.log(`Merged plucking data for ${importedDay.dateId}`)
+        } else {
+          // New date: add it
+          await db.dailyPluckingProgress.add({
+            dateId: importedDay.dateId,
+            plucks: importedDay.plucks
+          })
+          console.log(`Added new plucking data for ${importedDay.dateId}`)
+        }
+      }
+    }
+
+    // Reload the charts
     await loadData()
     console.log('Data imported and merged successfully')
 
@@ -584,5 +929,36 @@ onMounted(() => {
   color: #059669;
   padding-top: 0.5rem;
   border-top: 1px solid #d1d5db;
+}
+
+.tab-navigation {
+  padding: 1rem;
+  display: flex;
+  gap: 0.5rem;
+  background: white;
+  border-radius: 8px;
+}
+
+.tab-button {
+  padding: 0.75rem 1.5rem;
+  border: 1px solid #d1d5db;
+  background: white;
+  color: #6b7280;
+  border-radius: 6px;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tab-button:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.tab-button.active {
+  background: #312e81;
+  color: white;
+  border-color: #312e81;
 }
 </style>
