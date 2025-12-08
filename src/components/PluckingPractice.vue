@@ -436,7 +436,7 @@ watch([stringsPlucked, pluckOrder], () => {
 
 /* Guitar Visualization */
 .guitar-visualization {
-  max-width: 800px;
+  max-width: 900px;
   margin: 0 auto;
   width: 100%;
 }
@@ -445,84 +445,132 @@ watch([stringsPlucked, pluckOrder], () => {
   position: relative;
   background: linear-gradient(135deg, #8B4513 0%, #654321 100%);
   border-radius: 20px;
-  padding: 2rem;
+  padding: 3rem 2rem;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  min-height: 400px;
 }
 
 .sound-hole {
   position: absolute;
-  left: 20%;
+  left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
-  width: 80px;
-  height: 80px;
-  background: #000;
+  width: 180px;
+  height: 180px;
+  background: radial-gradient(circle at center, #000 0%, #1a1a1a 70%, #000 100%);
   border-radius: 50%;
-  border: 3px solid #654321;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  border: 4px solid #654321;
+  box-shadow:
+    inset 0 0 30px rgba(0, 0, 0, 0.8),
+    0 4px 10px rgba(0, 0, 0, 0.5);
+  z-index: 1;
 }
 
 .sound-hole-inner {
-  width: 60px;
-  height: 60px;
-  border: 2px solid #8B4513;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 140px;
+  height: 140px;
+  border: 3px solid #8B4513;
   border-radius: 50%;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+.sound-hole-inner::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100px;
+  height: 100px;
+  border: 2px solid #654321;
+  border-radius: 50%;
+  opacity: 0.6;
 }
 
 .strings-container {
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  margin-left: 120px;
+  gap: 1.2rem;
+  padding: 0 2rem;
+  z-index: 2;
 }
 
 .string-row {
   display: flex;
   align-items: center;
   gap: 1rem;
-  padding: 0.5rem;
-  border-radius: 4px;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
   transition: all 0.3s;
+  background: transparent;
 }
 
 .string-row.target-string {
-  background: rgba(255, 165, 0, 0.2);
+  background: rgba(255, 165, 0, 0.15);
   border: 2px solid #ffa500;
+  box-shadow: 0 0 10px rgba(255, 165, 0, 0.3);
 }
 
 .string-row.correct-string {
-  background: rgba(76, 175, 80, 0.2);
+  background: rgba(76, 175, 80, 0.15);
   border: 2px solid #4CAF50;
+  box-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
 }
 
 .string-row.wrong-string {
-  background: rgba(244, 67, 54, 0.2);
+  background: rgba(244, 67, 54, 0.15);
   border: 2px solid #f44336;
+  box-shadow: 0 0 10px rgba(244, 67, 54, 0.3);
 }
 
 .string-label {
-  min-width: 80px;
+  min-width: 90px;
   color: #fff;
   font-size: 0.9rem;
   font-weight: 500;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
 }
 
 .string-line {
   flex: 1;
   height: 2px;
-  background: linear-gradient(90deg, #ddd 0%, #888 100%);
+  background: linear-gradient(90deg, #c0c0c0 0%, #808080 50%, #c0c0c0 100%);
   border-radius: 1px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.5),
+    0 -1px 1px rgba(255, 255, 255, 0.1);
+  position: relative;
 }
 
-.string-row:nth-child(1) .string-line { height: 1px; }
-.string-row:nth-child(2) .string-line { height: 1.5px; }
-.string-row:nth-child(3) .string-line { height: 2px; }
-.string-row:nth-child(4) .string-line { height: 2.5px; }
-.string-row:nth-child(5) .string-line { height: 3px; }
-.string-row:nth-child(6) .string-line { height: 3.5px; }
+.string-row:nth-child(1) .string-line {
+  height: 1px;
+  background: linear-gradient(90deg, #d4d4d4 0%, #a0a0a0 50%, #d4d4d4 100%);
+}
+.string-row:nth-child(2) .string-line {
+  height: 1.5px;
+  background: linear-gradient(90deg, #d0d0d0 0%, #909090 50%, #d0d0d0 100%);
+}
+.string-row:nth-child(3) .string-line {
+  height: 2px;
+  background: linear-gradient(90deg, #c0c0c0 0%, #808080 50%, #c0c0c0 100%);
+}
+.string-row:nth-child(4) .string-line {
+  height: 2.5px;
+  background: linear-gradient(90deg, #b8b0a0 0%, #706040 50%, #b8b0a0 100%);
+}
+.string-row:nth-child(5) .string-line {
+  height: 3px;
+  background: linear-gradient(90deg, #b0a090 0%, #604030 50%, #b0a090 100%);
+}
+.string-row:nth-child(6) .string-line {
+  height: 3.5px;
+  background: linear-gradient(90deg, #a89080 0%, #503020 50%, #a89080 100%);
+}
 
 .string-status {
   min-width: 60px;
