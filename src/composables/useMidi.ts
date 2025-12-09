@@ -47,9 +47,10 @@ export function useMidi() {
     autoClearTimer = window.setTimeout(() => {
       if (stringsPlucked.value.size > 0) {
         console.log('⏰ Auto-clearing plucked strings after 1 second of inactivity')
-        stringsPlucked.value.clear()
+        // Create new empty Set to trigger reactivity
+        stringsPlucked.value = new Set()
         pluckOrder.value = []
-        pluckedNotes.value.clear()
+        pluckedNotes.value = new Map()
       }
     }, AUTO_CLEAR_DELAY)
   }
@@ -90,7 +91,12 @@ export function useMidi() {
           if (channel >= 1 && channel <= 6) {
             const guitarString = 7 - channel // Convert MIDI channel to guitar string (1-6)
             console.log(`🎵 Note ON - MIDI Channel ${channel} → Guitar String ${guitarString}, Note ${data1}`)
-            stringsPlucked.value.add(guitarString)
+
+            // Add to set and trigger reactivity by creating new Set
+            const newSet = new Set(stringsPlucked.value)
+            newSet.add(guitarString)
+            stringsPlucked.value = newSet
+
             pluckOrder.value.push(guitarString)
             pluckedNotes.value.set(guitarString, data1) // Store the note value
             console.log(`   Plucked strings: ${Array.from(stringsPlucked.value).join(', ')}`)
@@ -288,9 +294,10 @@ export function useMidi() {
   }
 
   const clearStringsPlucked = () => {
-    stringsPlucked.value.clear()
+    // Create new empty collections to trigger reactivity
+    stringsPlucked.value = new Set()
     pluckOrder.value = []
-    pluckedNotes.value.clear()
+    pluckedNotes.value = new Map()
 
     // Clear auto-clear timer
     if (autoClearTimer !== null) {
