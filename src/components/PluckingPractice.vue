@@ -246,6 +246,10 @@ function startNewRound() {
   clearStringsPlucked()
   attemptCount.value++
 
+  console.log(`🎸 New Round ${attemptCount.value}:`)
+  console.log(`   Target strings: ${targetStrings.value.join(', ')}`)
+  console.log(`   Difficulty level: ${difficulty.value}`)
+
   // Start timer animation
   updateTimer()
 }
@@ -262,25 +266,34 @@ async function checkPlucking() {
   const nextIndex = pluckedStringsInOrder.value.length
   const expectedString = targetStrings.value[nextIndex]
 
+  console.log(`🎯 Checking plucks. Expected string: ${expectedString}, Next index: ${nextIndex}`)
+  console.log(`   Currently plucked: ${Array.from(stringsPlucked.value).join(', ')}`)
+  console.log(`   Already correct: ${pluckedStringsInOrder.value.join(', ')}`)
+  console.log(`   Already wrong: ${Array.from(wrongStrings.value).join(', ')}`)
+
   // Check all currently plucked strings
   const pluckedArray = Array.from(stringsPlucked.value)
 
   for (const string of pluckedArray) {
     // Skip if we've already processed this string
     if (pluckedStringsInOrder.value.includes(string) || wrongStrings.value.has(string)) {
+      console.log(`   Skipping string ${string} (already processed)`)
       continue
     }
 
     // Check if this is the expected string
     if (string === expectedString) {
+      console.log(`   ✅ Correct! String ${string} matches expected ${expectedString}`)
       pluckedStringsInOrder.value.push(string)
 
       // Check if we've completed all target strings
       if (pluckedStringsInOrder.value.length === targetStrings.value.length) {
+        console.log(`   🎉 All strings completed!`)
         await completeRound()
       }
     } else {
       // Wrong string plucked
+      console.log(`   ❌ Wrong! String ${string} doesn't match expected ${expectedString}`)
       wrongStrings.value.add(string)
     }
   }
@@ -312,8 +325,12 @@ async function completeRound() {
 
 // Watch for string plucks
 watch([stringsPlucked, pluckOrder], () => {
+  console.log(`👀 Watch triggered - stringsPlucked: ${Array.from(stringsPlucked.value).join(', ')}, pluckOrder: ${pluckOrder.value.join(', ')}`)
   if (isStarted.value && targetStrings.value.length > 0) {
+    console.log(`   Practice is started, checking plucking...`)
     checkPlucking()
+  } else {
+    console.log(`   Practice not started or no targets: isStarted=${isStarted.value}, targets=${targetStrings.value.length}`)
   }
 })
 </script>
