@@ -241,16 +241,10 @@ const stringStatusMap = computed(() => {
       // Not played yet
       statusMap.set(string, 'unplayed')
     } else {
-      // Check if the note is correct
-      const fret = targetChord.positions.get(string) || 0 // 0 for open strings
-      const expectedNote = getExpectedNote(string, fret)
-      const actualNote = pluckedNotes.value.get(string)
-
-      if (actualNote === expectedNote) {
-        statusMap.set(string, 'correct')
-      } else {
-        statusMap.set(string, 'wrong')
-      }
+      // String was plucked and is in the target chord - mark as correct
+      // Note: We only check channel (string) correctness, not note value
+      // because capo settings can shift the pitch
+      statusMap.set(string, 'correct')
     }
   }
 
@@ -385,27 +379,8 @@ const checkChordMatch = (): boolean => {
     }
   }
 
-  // Check 3: Validate plucked notes match expected notes
-  console.log('Check 3: Note Values')
-  for (const string of stringsPlucked.value) {
-    const fret = targetChord.positions.get(string) || 0 // 0 for open strings
-    const expectedNote = getExpectedNote(string, fret)
-    const actualNote = pluckedNotes.value.get(string)
-
-    console.log(`  String ${string} (fret ${fret}): Expected note ${expectedNote}, Actual note ${actualNote}`)
-    if (actualNote !== expectedNote) {
-      console.log(`  ❌ FAILED: Wrong note on string ${string}`)
-      console.log('  Resetting and starting over...')
-      resetStringsPlayedMap()
-      clearStringsPlucked()
-      console.groupEnd()
-      return false
-    }
-  }
-  console.log('  ✅ All note values correct')
-
-  // Check 4: Have all required strings been played?
-  console.log('Check 4: Completion Check')
+  // Check 3: Have all required strings been played?
+  console.log('Check 3: Completion Check')
   if (stringPlayCount.value === targetChord.stringsToPlay.size) {
     console.log(`  ✅ All ${targetChord.stringsToPlay.size} strings played!`)
     console.log('🎉 ALL CHECKS PASSED!')
