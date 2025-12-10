@@ -139,25 +139,6 @@ import { addChordTransition } from '../db/practiceDb'
 
 const { fretPositions, stringsPlucked, pluckOrder, pluckedNotes, clearStringsPlucked } = sharedMidi
 
-// Base MIDI notes for each string (open strings)
-const STRING_BASE_NOTES: Record<number, number> = {
-  6: 40, // 6th string (E)
-  5: 45, // 5th string (A)
-  4: 50, // 4th string (D)
-  3: 55, // 3rd string (G)
-  2: 59, // 2nd string (B)
-  1: 64  // 1st string (e)
-}
-
-// Calculate expected MIDI note for a string based on fret position
-const getExpectedNote = (guitarString: number, fret: number): number => {
-  const baseNote = STRING_BASE_NOTES[guitarString]
-  if (baseNote === undefined) {
-    throw new Error(`Invalid guitar string number: ${guitarString}`)
-  }
-  return baseNote + fret
-}
-
 // Chord progressions
 interface Progression {
   name: string
@@ -404,7 +385,7 @@ const updateTimer = () => {
 const startPractice = () => {
   isStarted.value = true
   currentChordIndex.value = 0
-  startTime.value = Date.now()
+  startTime.value = null // Don't start timing until first pluck
   currentTime.value = 0
 
   // Reset string tracking
@@ -467,8 +448,14 @@ const nextChord = async (time: number) => {
 
 // Watch for chord matches (check fret positions, plucks, and notes)
 watch([() => fretPositions.value, () => stringsPlucked.value, () => pluckedNotes.value], () => {
-  if (isStarted.value && startTime.value) {
-    if (checkChordMatch()) {
+  if (isStarted.value) {
+    // Start timing on first pluck
+    if (startTime.value === null && stringsPlucked.value.size > 0) {
+      startTime.value = Date.now()
+      console.log('⏱️ Timer started on first pluck')
+    }
+
+    if (startTime.value !== null && checkChordMatch()) {
       const time = currentTime.value
       nextChord(time)
     }
