@@ -385,7 +385,7 @@ const updateTimer = () => {
 const startPractice = () => {
   isStarted.value = true
   currentChordIndex.value = 0
-  startTime.value = Date.now()
+  startTime.value = null // Don't start timing until first pluck
   currentTime.value = 0
 
   // Reset string tracking
@@ -448,8 +448,14 @@ const nextChord = async (time: number) => {
 
 // Watch for chord matches (check fret positions, plucks, and notes)
 watch([() => fretPositions.value, () => stringsPlucked.value, () => pluckedNotes.value], () => {
-  if (isStarted.value && startTime.value) {
-    if (checkChordMatch()) {
+  if (isStarted.value) {
+    // Start timing on first pluck
+    if (startTime.value === null && stringsPlucked.value.size > 0) {
+      startTime.value = Date.now()
+      console.log('⏱️ Timer started on first pluck')
+    }
+
+    if (startTime.value !== null && checkChordMatch()) {
       const time = currentTime.value
       nextChord(time)
     }

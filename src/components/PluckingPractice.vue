@@ -139,6 +139,7 @@ const wrongStrings = ref<Set<number>>(new Set())
 const startTime = ref<number | null>(null)
 const currentTime = ref(0)
 const attemptCount = ref(0)
+const lastStringOfPreviousRound = ref<number | null>(null)
 let animationFrameId: number | null = null
 
 // Statistics
@@ -201,7 +202,7 @@ function getStringClass(string: number): string {
   return classes.join(' ')
 }
 
-function generateRandomStrings(): number[] {
+function generateRandomStrings(avoidString: number | null = null): number[] {
   const allStrings = [1, 2, 3, 4, 5, 6]
   const count = difficulty.value
 
@@ -215,13 +216,24 @@ function generateRandomStrings(): number[] {
   }
 
   // Take first 'count' strings and sort them from highest to lowest (6 to 1)
-  return shuffled.slice(0, count).sort((a, b) => b - a)
+  const selected = shuffled.slice(0, count).sort((a, b) => b - a)
+
+  // If we need to avoid a string and it's the first in our selection, swap it with another
+  if (avoidString !== null && selected[0] === avoidString && selected.length > 1) {
+    // Swap first and second elements
+    const temp = selected[0]!
+    selected[0] = selected[1]!
+    selected[1] = temp
+  }
+
+  return selected
 }
 
 function startPractice() {
   isStarted.value = true
   attemptCount.value = 0
   sessionStats.value.clear()
+  lastStringOfPreviousRound.value = null
   startNewRound()
 }
 
@@ -239,10 +251,10 @@ function stopPractice() {
 }
 
 function startNewRound() {
-  targetStrings.value = generateRandomStrings()
+  targetStrings.value = generateRandomStrings(lastStringOfPreviousRound.value)
   pluckedStringsInOrder.value = []
   wrongStrings.value.clear()
-  startTime.value = Date.now()
+  startTime.value = null // Don't start timing until first pluck
   clearStringsPlucked()
   attemptCount.value++
 
@@ -262,6 +274,12 @@ function updateTimer() {
 }
 
 async function checkPlucking() {
+  // Start timing on first pluck
+  if (startTime.value === null && stringsPlucked.value.size > 0) {
+    startTime.value = Date.now()
+    console.log('⏱️ Timer started on first pluck')
+  }
+
   // Get the next expected string
   const nextIndex = pluckedStringsInOrder.value.length
   const expectedString = targetStrings.value[nextIndex]
@@ -303,6 +321,11 @@ async function completeRound() {
   if (startTime.value === null) return
 
   const timeTaken = (Date.now() - startTime.value) / 1000
+
+  // Save the last string of this round to avoid it being first in the next round
+  if (targetStrings.value.length > 0) {
+    lastStringOfPreviousRound.value = targetStrings.value[targetStrings.value.length - 1]!
+  }
 
   // Save to statistics
   for (const string of targetStrings.value) {
