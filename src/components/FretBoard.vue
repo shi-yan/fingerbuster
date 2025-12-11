@@ -73,6 +73,21 @@
                 :style="{ width: (fretWidth * 12) + 'px' }"
               ></div>
 
+              <!-- Barre indicator (shown on the strings covered by the barre) -->
+              <div
+                v-if="currentChord && currentChord.barre && string >= currentChord.barre.endString && string <= currentChord.barre.startString"
+                class="barre-indicator"
+                :class="getFingerColorClass(string, currentChord.barre.fret)"
+                :style="{
+                  left: ((currentChord.barre.fret - 1) * fretWidth + fretWidth / 2) + 'px',
+                  width: '48px',
+                  height: string === currentChord.barre.endString ? `${((currentChord.barre.startString - currentChord.barre.endString) * 40 + (currentChord.barre.startString - currentChord.barre.endString) * 12)}px` : '0px',
+                  zIndex: string === currentChord.barre.endString ? 9 : 0
+                }"
+              >
+                <span v-if="string === currentChord.barre.endString">{{ currentChord.barre.finger }}</span>
+              </div>
+
               <!-- Frets -->
               <div
                 v-for="fret in 12"
@@ -188,9 +203,17 @@ interface ChordPosition {
   finger: number
 }
 
+interface BarreInfo {
+  fret: number
+  startString: number
+  endString: number
+  finger: number
+}
+
 interface Chord {
   name: string
   positions: (ChordPosition | 'x' | null)[] // null = open string (0), 'x' = don't play
+  barre?: BarreInfo
 }
 
 interface ChordStringData {
@@ -201,6 +224,12 @@ interface ChordStringData {
 
 interface ChordJson {
   name: string
+  barre?: {
+    fret: number
+    startString: number
+    endString: number
+    finger: number
+  }
   string_1: ChordStringData
   string_2: ChordStringData
   string_3: ChordStringData
@@ -233,10 +262,16 @@ const convertChordData = (jsonChord: ChordJson): Chord => {
     return { fret: str.fret, finger: str.finger }
   })
 
-  return {
+  const chord: Chord = {
     name: jsonChord.name,
     positions: positions as (ChordPosition | 'x' | null)[]
   }
+
+  if (jsonChord.barre) {
+    chord.barre = jsonChord.barre
+  }
+
+  return chord
 }
 
 // Load chords from JSON
@@ -566,6 +601,26 @@ const shouldShowInlay = (fret: number): boolean => {
   z-index: 8;
   position: absolute;
   box-shadow: 0 0 10px rgba(34, 197, 94, 0.5);
+}
+
+/* Barre indicator - horizontal bar connecting multiple strings */
+.barre-indicator {
+  position: absolute;
+  border-radius: 24px;
+  border: 3px solid white;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.barre-indicator span {
+  font-size: 1rem;
+  font-weight: bold;
+  color: white;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 .inlay-marker {

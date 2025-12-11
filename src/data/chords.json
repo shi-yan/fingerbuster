@@ -265,6 +265,12 @@
   },
   {
     "name": "F",
+    "barre": {
+      "fret": 1,
+      "startString": 6,
+      "endString": 1,
+      "finger": 1
+    },
     "string_1": {
       "play": true,
       "fret": 1,
@@ -273,12 +279,12 @@
     "string_2": {
       "play": true,
       "fret": 1,
-      "finger": 2
+      "finger": 1
     },
     "string_3": {
       "play": true,
       "fret": 2,
-      "finger": 3
+      "finger": 2
     },
     "string_4": {
       "play": true,
@@ -286,14 +292,14 @@
       "finger": 4
     },
     "string_5": {
-      "play": false,
-      "fret": 0,
-      "finger": 0
+      "play": true,
+      "fret": 3,
+      "finger": 3
     },
     "string_6": {
-      "play": false,
-      "fret": 0,
-      "finger": 0
+      "play": true,
+      "fret": 1,
+      "finger": 1
     }
   },
   {
