@@ -25,7 +25,7 @@ export function useMidi() {
   const midiAccess = ref<MIDIAccess | null>(null)
   const connectedInputs = ref<MIDIInput[]>([])
   const messages = ref<MidiMessage[]>([])
-  const fretPositions = ref<Map<number, number>>(new Map())
+  const fretPositions = ref<Map<number, Set<number>>>(new Map())
   const stringsPlucked = ref<Set<number>>(new Set())
   const pluckOrder = ref<number[]>([]) // Track order of plucks
   const pluckedNotes = ref<Map<number, number>>(new Map()) // string -> note value
@@ -126,15 +126,26 @@ export function useMidi() {
         // Controller 49 = finger press, Controller 50 = finger release
         if (channel >= 1 && channel <= 6) {
           if (data1 === 49) {
-            // Finger press - set fret position
+            // Finger press - add fret to the set for this string
             if (data2 === 0) {
+              // Open string - remove all frets for this string
               fretPositions.value.delete(channel)
             } else {
-              fretPositions.value.set(channel, data2)
+              // Get or create the set for this string
+              if (!fretPositions.value.has(channel)) {
+                fretPositions.value.set(channel, new Set())
+              }
+              fretPositions.value.get(channel)!.add(data2)
             }
           } else if (data1 === 50) {
-            // Finger release - remove fret position
-            fretPositions.value.delete(channel)
+            // Finger release - remove this specific fret from the set
+            if (fretPositions.value.has(channel)) {
+              fretPositions.value.get(channel)!.delete(data2)
+              // If no frets left on this string, remove the string entry
+              if (fretPositions.value.get(channel)!.size === 0) {
+                fretPositions.value.delete(channel)
+              }
+            }
           }
         }
         break
@@ -342,3 +353,6 @@ export function useMidi() {
     checkSupport
   }
 }
+
+// Create a singleton MIDI instance that's shared across the entire app
+export const sharedMidi = useMidi()

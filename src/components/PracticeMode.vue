@@ -132,7 +132,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { sharedMidi } from '../midi'
+import { sharedMidi } from '../composables/useMidi'
 import FretBoard from './FretBoard.vue'
 import chordsData from '../data/chords.json'
 import { addChordTransition } from '../db/practiceDb'
@@ -324,8 +324,10 @@ const checkChordMatch = (): boolean => {
   // Check 1: All required fret positions are pressed
   console.log('Check 1: Fret Positions')
   for (const [string, fret] of targetChord.positions.entries()) {
-    const actual = fretPositions.value.get(string)
-    console.log(`  String ${string}: Expected fret ${fret}, Actual fret ${actual}`)
+    const fretSet = fretPositions.value.get(string)
+    // Get the highest fret from the set (or undefined if no frets pressed)
+    const actual = fretSet && fretSet.size > 0 ? Math.max(...Array.from(fretSet)) : undefined
+    console.log(`  String ${string}: Expected fret ${fret}, Pressed frets ${fretSet ? Array.from(fretSet).join(',') : 'none'}, Using highest: ${actual}`)
     if (actual !== fret) {
       console.log(`  ❌ FAILED: String ${string} not pressed at fret ${fret}`)
       console.groupEnd()

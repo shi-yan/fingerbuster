@@ -68,7 +68,7 @@
 
 <script setup lang="ts">
 import { onMounted, ref, watch, nextTick } from 'vue'
-import { sharedMidi } from '../midi'
+import { sharedMidi } from '../composables/useMidi'
 
 const {
   connectedInputs,

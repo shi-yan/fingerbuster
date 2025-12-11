@@ -59,7 +59,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { sharedMidi } from '../midi'
+import { sharedMidi } from '../composables/useMidi'
 import FretBoard from './FretBoard.vue'
 
 const {
