@@ -203,11 +203,16 @@ function getStringClass(string: number): string {
 }
 
 function generateRandomStrings(avoidString: number | null = null): number[] {
-  const allStrings = [1, 2, 3, 4, 5, 6]
+  // Filter out the string to avoid from the pool
+  let availableStrings = [1, 2, 3, 4, 5, 6]
+  if (avoidString !== null) {
+    availableStrings = availableStrings.filter(s => s !== avoidString)
+  }
+
   const count = difficulty.value
 
   // Fisher-Yates shuffle
-  const shuffled = [...allStrings]
+  const shuffled = [...availableStrings]
   for (let i = shuffled.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1))
     const temp = shuffled[i]!
@@ -217,14 +222,6 @@ function generateRandomStrings(avoidString: number | null = null): number[] {
 
   // Take first 'count' strings and sort them from highest to lowest (6 to 1)
   const selected = shuffled.slice(0, count).sort((a, b) => b - a)
-
-  // If we need to avoid a string and it's the first in our selection, swap it with another
-  if (avoidString !== null && selected[0] === avoidString && selected.length > 1) {
-    // Swap first and second elements
-    const temp = selected[0]!
-    selected[0] = selected[1]!
-    selected[1] = temp
-  }
 
   return selected
 }
