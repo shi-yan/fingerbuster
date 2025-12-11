@@ -125,7 +125,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { sharedMidi } from '../midi'
+import { sharedMidi } from '../composables/useMidi'
 import { addStringPluck } from '../db/practiceDb'
 
 const { stringsPlucked, pluckOrder, clearStringsPlucked } = sharedMidi

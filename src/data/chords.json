@@ -141,7 +141,7 @@
     "string_2": {
       "play": true,
       "fret": 2,
-      "finger": 2
+      "finger": 4
     },
     "string_3": {
       "play": true,
@@ -151,7 +151,7 @@
     "string_4": {
       "play": true,
       "fret": 2,
-      "finger": 4
+      "finger": 2
     },
     "string_5": {
       "play": true,

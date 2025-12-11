@@ -175,12 +175,12 @@
         </div>
         <div v-else class="positions-list">
           <div
-            v-for="[string, fret] in Array.from(fretPositions.entries())"
+            v-for="[string, fretSet] in Array.from(fretPositions.entries())"
             :key="`position-${string}`"
             class="position-item"
           >
             <span class="position-string">{{ getStringName(string) }}:</span>
-            <span class="position-fret">Fret {{ fret }}</span>
+            <span class="position-fret">Frets {{ Array.from(fretSet).sort((a, b) => a - b).join(', ') }} (using {{ Math.max(...Array.from(fretSet)) }})</span>
           </div>
         </div>
       </div>
@@ -193,7 +193,7 @@ import { ref, computed } from 'vue'
 import chordsData from '../data/chords.json'
 
 interface Props {
-  fretPositions: Map<number, number>
+  fretPositions: Map<number, Set<number>>
   selectedChord?: string | null  // Optional: for practice mode
   stringStatus?: Map<number, 'correct' | 'wrong' | 'unplayed'>  // Optional: for practice mode string visualization
 }
@@ -359,7 +359,8 @@ const getFingerColorClass = (string: number, _fret: number): string => {
 }
 
 const isStringFretPressed = (string: number, fret: number): boolean => {
-  return props.fretPositions.get(string) === fret
+  const fretSet = props.fretPositions.get(string)
+  return fretSet ? fretSet.has(fret) : false
 }
 
 const shouldShowInlay = (fret: number): boolean => {
