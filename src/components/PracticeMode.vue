@@ -2,49 +2,151 @@
   <div class="practice-mode">
     <div class="practice-header card">
       <h2>Practice Mode</h2>
-      <div class="practice-controls">
-        <div class="progression-selector">
-          <label for="progression">Chord Progression:</label>
+    </div>
+
+    <!-- Chord Builder Section -->
+    <div v-if="!isStarted" class="chord-builder card">
+      <h3>Build Your Chord Progression</h3>
+
+      <!-- Preset Progressions Dropdown and Save Controls -->
+      <div class="builder-controls">
+        <div class="preset-selector">
+          <label for="preset">Load Preset:</label>
           <select
-            id="progression"
-            v-model="selectedProgression"
-            :disabled="isStarted"
-            class="progression-dropdown"
+            id="preset"
+            v-model="selectedPresetIndex"
+            @change="loadPreset"
+            class="preset-dropdown"
           >
-            <option
-              v-for="(prog, index) in progressions"
-              :key="index"
-              :value="index"
-            >
-              {{ prog.name }}
-            </option>
+            <option :value="-1">-- Select a progression --</option>
+            <optgroup label="Default Progressions">
+              <option
+                v-for="(prog, index) in defaultProgressions"
+                :key="`default-${index}`"
+                :value="index"
+              >
+                {{ prog.name }}
+              </option>
+            </optgroup>
+            <optgroup v-if="savedProgressions.length > 0" label="Saved Progressions">
+              <option
+                v-for="(prog, index) in savedProgressions"
+                :key="`saved-${prog.id}`"
+                :value="defaultProgressions.length + index"
+              >
+                {{ prog.name }}
+              </option>
+            </optgroup>
           </select>
         </div>
-        <button
-          v-if="!isStarted"
-          @click="startPractice"
-          class="btn-primary"
+
+        <div class="save-controls">
+          <input
+            v-model="progressionName"
+            type="text"
+            placeholder="Progression name..."
+            class="progression-name-input"
+          />
+          <button
+            @click="saveCustomProgression"
+            :disabled="customProgression.length === 0 || !progressionName.trim()"
+            class="btn-save"
+          >
+            Save Progression
+          </button>
+        </div>
+      </div>
+
+      <!-- Available Chords (Row 1) -->
+      <div class="available-chords-section">
+        <h4>Available Chords (drag to add)</h4>
+        <div class="chords-row available-chords">
+          <div
+            v-for="chord in availableChords"
+            :key="chord"
+            draggable="true"
+            @dragstart="onDragStart($event, chord)"
+            class="chord-item available"
+          >
+            {{ chord }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Custom Progression (Row 2) -->
+      <div class="custom-progression-section">
+        <div class="section-header">
+          <h4>Your Custom Progression</h4>
+          <button
+            v-if="customProgression.length > 0"
+            @click="clearProgression"
+            class="btn-clear"
+          >
+            Clear All
+          </button>
+        </div>
+        <div
+          class="chords-row custom-progression"
+          @drop="onDropToProgression($event)"
+          @dragover="onDragOver($event)"
+          :class="{ empty: customProgression.length === 0 }"
         >
-          Start Practice
-        </button>
+          <div
+            v-if="customProgression.length === 0"
+            class="empty-placeholder"
+          >
+            Drag chords here to build your progression
+          </div>
+          <div
+            v-for="(chord, index) in customProgression"
+            :key="`progression-${index}`"
+            draggable="true"
+            @dragstart="onDragStartFromProgression($event, index)"
+            @drop="onDropReorder($event, index)"
+            @dragover="onDragOver($event)"
+            class="chord-item custom"
+          >
+            <span class="chord-label">{{ chord }}</span>
+            <button
+              @click="removeChord(index)"
+              class="remove-btn"
+              title="Remove"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Start Practice Button -->
+      <div class="start-practice-section">
         <button
-          v-else
+          @click="startPractice"
+          :disabled="customProgression.length === 0"
+          class="btn-primary btn-large"
+        >
+          Start Practice ({{ customProgression.length }} chords)
+        </button>
+      </div>
+    </div>
+
+    <!-- Practice Session Display -->
+    <div v-if="isStarted" class="current-chord-display card">
+      <h3>Current Chord: <span class="chord-name">{{ currentChordName }}</span></h3>
+      <div class="progress-info">
+        <p>Progress: {{ currentChordIndex + 1 }} / {{ customProgression.length }}</p>
+        <p v-if="startTime">Time: {{ currentTime.toFixed(2) }}s</p>
+      </div>
+      <div class="progression-display">
+        <p>Progression: {{ customProgression.join(' → ') }}</p>
+      </div>
+      <div class="stop-practice-section">
+        <button
           @click="stopPractice"
           class="btn-danger"
         >
           Stop Practice
         </button>
-      </div>
-    </div>
-
-    <div v-if="isStarted" class="current-chord-display card">
-      <h3>Current Chord: <span class="chord-name">{{ currentChordName }}</span></h3>
-      <div class="progress-info">
-        <p>Progress: {{ currentChordIndex + 1 }} / {{ practiceChords.length }}</p>
-        <p v-if="startTime">Time: {{ currentTime.toFixed(2) }}s</p>
-      </div>
-      <div class="progression-display">
-        <p>Progression: {{ progressions[selectedProgression]?.name || 'Unknown' }}</p>
       </div>
     </div>
 
@@ -131,21 +233,30 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { sharedMidi } from '../composables/useMidi'
 import FretBoard from './FretBoard.vue'
 import chordsData from '../data/chords.json'
-import { addChordTransition } from '../db/practiceDb'
+import { addChordTransition, getAllSavedProgressions, saveProgression, type SavedProgression } from '../db/practiceDb'
 
 const { fretPositions, stringsPlucked, pluckOrder, pluckedNotes, clearStringsPlucked } = sharedMidi
 
-// Chord progressions
+// Available chords from chords.json
+const availableChords = ref<string[]>(chordsData.map(c => c.name))
+
+// Custom progression built by user
+const customProgression = ref<string[]>([])
+
+// Progression name for saving
+const progressionName = ref('')
+
+// Default chord progressions
 interface Progression {
   name: string
   chords: string[]
 }
 
-const progressions: Progression[] = [
+const defaultProgressions: Progression[] = [
   {
     name: 'Current Order (G → C → D → Em)',
     chords: ['G', 'C', 'D', 'Em']
@@ -168,11 +279,129 @@ const progressions: Progression[] = [
   }
 ]
 
-const selectedProgression = ref(0)
+// Saved progressions from IndexedDB
+const savedProgressions = ref<SavedProgression[]>([])
 
-const practiceChords = computed(() => {
-  return progressions[selectedProgression.value]?.chords || []
-})
+// Selected preset index
+const selectedPresetIndex = ref(-1)
+
+// Load saved progressions from IndexedDB
+const loadSavedProgressions = async () => {
+  savedProgressions.value = await getAllSavedProgressions()
+}
+
+// Load a preset progression
+const loadPreset = () => {
+  if (selectedPresetIndex.value === -1) return
+
+  if (selectedPresetIndex.value < defaultProgressions.length) {
+    // Load default progression
+    const preset = defaultProgressions[selectedPresetIndex.value]
+    if (preset) {
+      customProgression.value = [...preset.chords]
+      progressionName.value = preset.name
+    }
+  } else {
+    // Load saved progression
+    const savedIndex = selectedPresetIndex.value - defaultProgressions.length
+    const saved = savedProgressions.value[savedIndex]
+    if (saved) {
+      customProgression.value = [...saved.chords]
+      progressionName.value = saved.name
+    }
+  }
+}
+
+// Save custom progression to IndexedDB
+const saveCustomProgression = async () => {
+  if (customProgression.value.length === 0 || !progressionName.value.trim()) return
+
+  try {
+    await saveProgression(progressionName.value.trim(), customProgression.value)
+    await loadSavedProgressions()
+    alert(`Progression "${progressionName.value}" saved successfully!`)
+  } catch (error) {
+    console.error('Error saving progression:', error)
+    alert('Failed to save progression. Please try again.')
+  }
+}
+
+// Clear custom progression
+const clearProgression = () => {
+  customProgression.value = []
+  progressionName.value = ''
+  selectedPresetIndex.value = -1
+}
+
+// Remove a chord from custom progression
+const removeChord = (index: number) => {
+  customProgression.value.splice(index, 1)
+}
+
+// Drag and drop handlers
+let draggedChord: string | null = null
+let draggedIndex: number | null = null
+
+const onDragStart = (event: DragEvent, chord: string) => {
+  draggedChord = chord
+  draggedIndex = null
+  if (event.dataTransfer) {
+    event.dataTransfer.effectAllowed = 'copy'
+  }
+}
+
+const onDragStartFromProgression = (event: DragEvent, index: number) => {
+  draggedIndex = index
+  draggedChord = customProgression.value[index] || null
+  if (event.dataTransfer) {
+    event.dataTransfer.effectAllowed = 'move'
+  }
+}
+
+const onDragOver = (event: DragEvent) => {
+  event.preventDefault()
+  if (event.dataTransfer) {
+    event.dataTransfer.dropEffect = draggedIndex !== null ? 'move' : 'copy'
+  }
+}
+
+const onDropToProgression = (event: DragEvent) => {
+  event.preventDefault()
+  if (draggedChord) {
+    if (draggedIndex !== null) {
+      // Moving within progression - add at end
+      customProgression.value.push(draggedChord)
+    } else {
+      // Adding from available chords
+      customProgression.value.push(draggedChord)
+    }
+  }
+  draggedChord = null
+  draggedIndex = null
+}
+
+const onDropReorder = (event: DragEvent, targetIndex: number) => {
+  event.preventDefault()
+  event.stopPropagation()
+
+  if (draggedIndex !== null && draggedIndex !== targetIndex) {
+    // Reordering within progression
+    const movedChord = customProgression.value[draggedIndex]
+    if (movedChord) {
+      customProgression.value.splice(draggedIndex, 1)
+
+      // Adjust target index if needed
+      const adjustedIndex = draggedIndex < targetIndex ? targetIndex - 1 : targetIndex
+      customProgression.value.splice(adjustedIndex, 0, movedChord)
+    }
+  } else if (draggedChord && draggedIndex === null) {
+    // Adding from available chords at specific position
+    customProgression.value.splice(targetIndex, 0, draggedChord)
+  }
+
+  draggedChord = null
+  draggedIndex = null
+}
 
 // Practice state
 const isStarted = ref(false)
@@ -197,7 +426,7 @@ interface ChordStat {
 const chordTimes = ref<Record<string, number[]>>({})
 
 const currentChordName = computed(() => {
-  return practiceChords.value[currentChordIndex.value] || ''
+  return customProgression.value[currentChordIndex.value] || ''
 })
 
 // Calculate string status for visualization
@@ -241,7 +470,7 @@ const stringStatusMap = computed(() => {
 
 const statistics = computed(() => {
   const stats: ChordStat[] = []
-  for (const chord of practiceChords.value) {
+  for (const chord of customProgression.value) {
     const times = chordTimes.value[chord] || []
     if (times.length > 0) {
       const average = times.reduce((a, b) => a + b, 0) / times.length
@@ -385,6 +614,8 @@ const updateTimer = () => {
 
 // Start practice
 const startPractice = () => {
+  if (customProgression.value.length === 0) return
+
   isStarted.value = true
   currentChordIndex.value = 0
   startTime.value = null // Don't start timing until first pluck
@@ -438,7 +669,7 @@ const nextChord = async (time: number) => {
   // Move to next chord
   currentChordIndex.value++
 
-  if (currentChordIndex.value >= practiceChords.value.length) {
+  if (currentChordIndex.value >= customProgression.value.length) {
     // Loop back to start
     currentChordIndex.value = 0
   }
@@ -463,6 +694,11 @@ watch([() => fretPositions.value, () => stringsPlucked.value, () => pluckedNotes
     }
   }
 }, { deep: true })
+
+// Load saved progressions on mount
+onMounted(() => {
+  loadSavedProgressions()
+})
 </script>
 
 <style scoped>
@@ -475,9 +711,6 @@ watch([() => fretPositions.value, () => stringsPlucked.value, () => pluckedNotes
 }
 
 .practice-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   padding: 1.5rem;
 }
 
@@ -488,26 +721,42 @@ watch([() => fretPositions.value, () => stringsPlucked.value, () => pluckedNotes
   margin: 0;
 }
 
-.practice-controls {
-  display: flex;
-  gap: 1rem;
-  align-items: center;
-  flex-wrap: wrap;
+/* Chord Builder */
+.chord-builder {
+  padding: 1.5rem;
 }
 
-.progression-selector {
+.chord-builder h3 {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: #1f2937;
+  margin: 0 0 1rem 0;
+}
+
+.builder-controls {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+.preset-selector {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  flex: 1;
+  min-width: 300px;
 }
 
-.progression-selector label {
+.preset-selector label {
   font-size: 0.875rem;
   font-weight: 600;
   color: #4b5563;
+  white-space: nowrap;
 }
 
-.progression-dropdown {
+.preset-dropdown {
   padding: 0.5rem;
   border: 2px solid #d1d5db;
   border-radius: 6px;
@@ -516,30 +765,243 @@ watch([() => fretPositions.value, () => stringsPlucked.value, () => pluckedNotes
   font-size: 0.875rem;
   cursor: pointer;
   transition: all 0.2s;
-  min-width: 300px;
+  flex: 1;
 }
 
-.progression-dropdown:hover:not(:disabled) {
+.preset-dropdown:hover {
   border-color: #4f46e5;
 }
 
-.progression-dropdown:disabled {
-  background-color: #f3f4f6;
+.save-controls {
+  display: flex;
+  gap: 0.5rem;
+  flex: 1;
+  min-width: 300px;
+}
+
+.progression-name-input {
+  padding: 0.5rem;
+  border: 2px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  flex: 1;
+  transition: border-color 0.2s;
+}
+
+.progression-name-input:focus {
+  outline: none;
+  border-color: #4f46e5;
+}
+
+.btn-save {
+  padding: 0.5rem 1rem;
+  background-color: #10b981;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.btn-save:hover:not(:disabled) {
+  background-color: #059669;
+}
+
+.btn-save:disabled {
+  background-color: #9ca3af;
   cursor: not-allowed;
   opacity: 0.6;
 }
 
-.progression-display {
-  margin-top: 0.75rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid #e5e7eb;
+/* Chord Rows */
+.available-chords-section,
+.custom-progression-section {
+  margin-bottom: 1.5rem;
 }
 
-.progression-display p {
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.available-chords-section h4,
+.custom-progression-section h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #4b5563;
+  margin: 0 0 0.75rem 0;
+}
+
+.chords-row {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  min-height: 60px;
+  padding: 0.75rem;
+  border-radius: 8px;
+  border: 2px dashed #d1d5db;
+}
+
+.available-chords {
+  background-color: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.custom-progression {
+  background-color: #eff6ff;
+  border-color: #3b82f6;
+  transition: all 0.3s;
+}
+
+.custom-progression.empty {
+  justify-content: center;
+  align-items: center;
+}
+
+.empty-placeholder {
+  color: #9ca3af;
   font-size: 0.875rem;
-  color: #6b7280;
+  font-style: italic;
+  text-align: center;
 }
 
+.chord-item {
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: move;
+  transition: all 0.2s;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.chord-item.available {
+  background-color: #e0e7ff;
+  color: #4f46e5;
+  border: 2px solid #4f46e5;
+}
+
+.chord-item.available:hover {
+  background-color: #c7d2fe;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(79, 70, 229, 0.2);
+}
+
+.chord-item.custom {
+  background-color: #dbeafe;
+  color: #1e40af;
+  border: 2px solid #3b82f6;
+  position: relative;
+}
+
+.chord-item.custom:hover {
+  background-color: #bfdbfe;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(59, 130, 246, 0.2);
+}
+
+.chord-label {
+  flex: 1;
+}
+
+.remove-btn {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: none;
+  background-color: #ef4444;
+  color: white;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: all 0.2s;
+}
+
+.remove-btn:hover {
+  background-color: #dc2626;
+  transform: scale(1.1);
+}
+
+.btn-clear {
+  padding: 0.5rem 1rem;
+  background-color: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-clear:hover {
+  background-color: #dc2626;
+}
+
+.start-practice-section {
+  display: flex;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
+.btn-primary {
+  padding: 0.75rem 1.5rem;
+  background-color: #4f46e5;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: #4338ca;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(79, 70, 229, 0.3);
+}
+
+.btn-primary:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.btn-large {
+  padding: 1rem 2rem;
+  font-size: 1.125rem;
+}
+
+.btn-danger {
+  padding: 0.75rem 1.5rem;
+  background-color: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-danger:hover {
+  background-color: #dc2626;
+}
+
+/* Practice Display */
 .current-chord-display {
   padding: 1.5rem;
   text-align: center;
@@ -569,6 +1031,22 @@ watch([() => fretPositions.value, () => stringsPlucked.value, () => pluckedNotes
   color: #6b7280;
 }
 
+.progression-display {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.progression-display p {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.stop-practice-section {
+  margin-top: 1rem;
+}
+
+/* Statistics */
 .statistics {
   padding: 1.5rem;
 }
