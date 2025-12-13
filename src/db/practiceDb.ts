@@ -13,6 +13,7 @@ export interface DailyProgress {
 export interface StringPluck {
   string: number // 1-6 (guitar string number)
   time: number // in seconds
+  attempts?: number // Number of attempts to pluck correctly (1 = first try, 2+ = retries)
 }
 
 export interface DailyPluckingProgress {
@@ -94,7 +95,7 @@ export async function getAllProgress(): Promise<DailyProgress[]> {
 }
 
 // Helper function to add a string pluck
-export async function addStringPluck(string: number, time: number) {
+export async function addStringPluck(string: number, time: number, attempts: number = 1) {
   const dateId = getTodayDateId()
 
   // Get existing progress for today
@@ -102,13 +103,13 @@ export async function addStringPluck(string: number, time: number) {
 
   if (existing) {
     // Append to existing plucks
-    existing.plucks.push({ string, time })
+    existing.plucks.push({ string, time, attempts })
     await db.dailyPluckingProgress.put(existing)
   } else {
     // Create new entry for today
     await db.dailyPluckingProgress.add({
       dateId,
-      plucks: [{ string, time }]
+      plucks: [{ string, time, attempts }]
     })
   }
 }

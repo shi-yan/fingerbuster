@@ -140,6 +140,7 @@ const startTime = ref<number | null>(null)
 const currentTime = ref(0)
 const attemptCount = ref(0)
 const lastStringOfPreviousRound = ref<number | null>(null)
+const retryCount = ref(0) // Track retry attempts for current target string
 let animationFrameId: number | null = null
 
 // Statistics
@@ -254,6 +255,7 @@ function startNewRound() {
   startTime.value = null // Don't start timing until first pluck
   clearStringsPlucked()
   attemptCount.value++
+  retryCount.value = 0 // Reset retry count for new round
 
   console.log(`🎸 New Round ${attemptCount.value}:`)
   console.log(`   Target strings: ${targetStrings.value.join(', ')}`)
@@ -298,8 +300,16 @@ async function checkPlucking() {
 
     // Check if this is the expected string
     if (string === expectedString) {
-      console.log(`   ✅ Correct! String ${string} matches expected ${expectedString}`)
+      console.log(`   ✅ Correct! String ${string} matches expected ${expectedString} (after ${retryCount.value} retries)`)
       pluckedStringsInOrder.value.push(string)
+
+      // Save retry count for this string (attempts = retries + 1 for the correct pluck)
+      const attempts = retryCount.value + 1
+      console.log(`   📊 Recording ${attempts} attempt(s) for string ${string}`)
+      await addStringPluck(string, currentTime.value, attempts)
+
+      // Reset retry count for next string
+      retryCount.value = 0
 
       // Check if we've completed all target strings
       if (pluckedStringsInOrder.value.length === targetStrings.value.length) {
@@ -307,9 +317,15 @@ async function checkPlucking() {
         await completeRound()
       }
     } else {
-      // Wrong string plucked
+      // Wrong string plucked - increment retry count
       console.log(`   ❌ Wrong! String ${string} doesn't match expected ${expectedString}`)
       wrongStrings.value.add(string)
+      retryCount.value++
+      console.log(`   📈 Retry count: ${retryCount.value}`)
+
+      // Immediately clear plucked strings to allow instant retry
+      // This prevents the auto-clear timer latency issue
+      clearStringsPlucked()
     }
   }
 }
@@ -324,16 +340,16 @@ async function completeRound() {
     lastStringOfPreviousRound.value = targetStrings.value[targetStrings.value.length - 1]!
   }
 
-  // Save to statistics
+  // Save to statistics (for session display)
   for (const string of targetStrings.value) {
     if (!sessionStats.value.has(string)) {
       sessionStats.value.set(string, [])
     }
     sessionStats.value.get(string)!.push(timeTaken)
-
-    // Save to IndexedDB
-    await addStringPluck(string, timeTaken)
   }
+
+  // Note: Individual string plucks with attempts are now saved immediately
+  // in checkPlucking() when each correct string is plucked
 
   // Wait a bit before starting new round
   setTimeout(() => {
