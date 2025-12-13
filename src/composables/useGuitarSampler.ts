@@ -181,6 +181,7 @@ export function useGuitarSampler() {
   return {
     isLoaded,
     isLoading,
+    sampler,
     initializeSampler,
     playString,
     playChord,

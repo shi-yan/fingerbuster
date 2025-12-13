@@ -11,7 +11,7 @@
         Loading guitar sounds...
       </div>
       <div v-else class="info">
-        Click any chord to initialize audio
+        Select a chord and click Play to initialize audio
       </div>
     </div>
 
@@ -142,19 +142,9 @@ let playbackSequence: number | null = null
 /**
  * Select a chord
  */
-async function selectChord(chord: ChordData): Promise<void> {
+function selectChord(chord: ChordData): void {
   selectedChord.value = chord
-
-  // Initialize sampler and start audio context on first interaction
-  if (!guitarSampler.isLoaded.value) {
-    try {
-      await guitarSampler.initializeSampler()
-      await guitarSampler.startAudio()
-      console.log('Audio initialized successfully')
-    } catch (error) {
-      console.error('Failed to initialize audio:', error)
-    }
-  }
+  // Don't initialize audio here - wait for play button click
 }
 
 /**
@@ -199,9 +189,12 @@ async function playArpeggio(): Promise<void> {
   const part = new Tone.Part((time, value) => {
     const stringNum = value.string
     const fret = getFretForString(stringNum)
+    const note = guitarSampler.getNoteForStringAndFret(stringNum, fret)
 
-    // Play the note
-    guitarSampler.playString(stringNum, fret, '8n')
+    // Play the note with scheduled time
+    if (guitarSampler.sampler.value) {
+      guitarSampler.sampler.value.triggerAttackRelease(note, '8n', time)
+    }
 
     // Update UI (schedule UI update slightly ahead for visual feedback)
     Tone.Draw.schedule(() => {
@@ -262,8 +255,12 @@ async function playLoop(): Promise<void> {
   const part = new Tone.Part((time, value) => {
     const stringNum = value.string
     const fret = getFretForString(stringNum)
+    const note = guitarSampler.getNoteForStringAndFret(stringNum, fret)
 
-    guitarSampler.playString(stringNum, fret, '8n')
+    // Play the note with scheduled time
+    if (guitarSampler.sampler.value) {
+      guitarSampler.sampler.value.triggerAttackRelease(note, '8n', time)
+    }
 
     Tone.Draw.schedule(() => {
       currentPlayingString.value = stringNum
