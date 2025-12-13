@@ -5,21 +5,7 @@
         <div>
           <h2>Progress Chart</h2>
           <p class="chart-description">Track your practice improvements</p>
-        </div>
-        <div class="data-controls">
-          <button @click="exportData" class="btn-export" title="Export data to JSON">
-            Export Data
-          </button>
-          <label for="import-file" class="btn-import" title="Import data from JSON">
-            Import Data
-            <input
-              id="import-file"
-              type="file"
-              accept="application/json"
-              @change="importData"
-              style="display: none"
-            />
-          </label>
+          <p class="backup-note">💡 Export/import data on the <strong>Connection</strong> page</p>
         </div>
       </div>
     </div>
@@ -126,7 +112,7 @@
       </div>
 
       <div v-if="hasPluckingData" class="daily-averages-container card">
-        <h3>Daily Averages</h3>
+        <h3>Daily Averages (Time)</h3>
         <div class="daily-averages-list">
           <div
             v-for="day in pluckingDailyAverages"
@@ -150,6 +136,34 @@
           </div>
         </div>
       </div>
+
+      <div v-if="hasPluckingData" class="accuracy-container card">
+        <h3>Plucking Accuracy (Average Attempts)</h3>
+        <p class="accuracy-description">Lower is better - 1.0 means perfect accuracy!</p>
+        <div class="daily-averages-list">
+          <div
+            v-for="day in pluckingAccuracyData"
+            :key="day.date"
+            class="daily-average-item"
+          >
+            <div class="date-header">{{ day.date }}</div>
+            <div class="averages-grid">
+              <div
+                v-for="acc in day.accuracies"
+                :key="acc.string"
+                class="chord-average"
+                :class="getAccuracyClass(acc.attempts)"
+              >
+                <span class="chord-name">String {{ acc.string }}:</span>
+                <span class="accuracy-value">{{ acc.attempts.toFixed(2) }} attempts</span>
+              </div>
+            </div>
+            <div class="overall-average" :class="getAccuracyClass(day.overallAccuracy)">
+              Overall: {{ day.overallAccuracy.toFixed(2) }} attempts
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -157,7 +171,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue'
 import * as d3 from 'd3'
-import { getAllProgress, getAllPluckingProgress, type DailyProgress, type DailyPluckingProgress, db } from '../db/practiceDb'
+import { getAllProgress, getAllPluckingProgress, type DailyProgress, type DailyPluckingProgress } from '../db/practiceDb'
 
 // Tab state
 const activeTab = ref<'chord' | 'plucking'>('chord')
@@ -272,6 +286,56 @@ const pluckingDailyAverages = computed((): PluckingDailyAverage[] => {
     })
     .sort((a, b) => b.date.localeCompare(a.date)) // Most recent first
 })
+
+// Calculate plucking accuracy (average attempts per string)
+interface PluckingAccuracyData {
+  date: string
+  accuracies: { string: number; attempts: number }[]
+  overallAccuracy: number
+}
+
+const pluckingAccuracyData = computed((): PluckingAccuracyData[] => {
+  return pluckingProgressData.value
+    .map(dailyData => {
+      const stringAttempts = new Map<number, number[]>()
+
+      // Group attempts by string
+      dailyData.plucks.forEach(p => {
+        if (!stringAttempts.has(p.string)) {
+          stringAttempts.set(p.string, [])
+        }
+        // Use attempts if available, otherwise default to 1
+        stringAttempts.get(p.string)!.push(p.attempts || 1)
+      })
+
+      // Calculate averages for each string
+      const accuracies = Array.from(stringAttempts.entries())
+        .map(([string, attempts]) => ({
+          string,
+          attempts: attempts.reduce((a, b) => a + b, 0) / attempts.length
+        }))
+        .sort((a, b) => a.string - b.string)
+
+      // Calculate overall accuracy for the day
+      const allAttempts = dailyData.plucks.map(p => p.attempts || 1)
+      const overallAccuracy = allAttempts.reduce((a, b) => a + b, 0) / allAttempts.length
+
+      return {
+        date: dailyData.dateId,
+        accuracies,
+        overallAccuracy
+      }
+    })
+    .sort((a, b) => b.date.localeCompare(a.date)) // Most recent first
+})
+
+// Get accuracy class for color coding
+const getAccuracyClass = (attempts: number): string => {
+  if (attempts <= 1.2) return 'accuracy-excellent'
+  if (attempts <= 2.0) return 'accuracy-good'
+  if (attempts <= 3.0) return 'accuracy-fair'
+  return 'accuracy-poor'
+}
 
 // Color scale for chords
 const chordColorScale = d3.scaleOrdinal(d3.schemeTableau10)
@@ -587,150 +651,6 @@ watch(activeTab, (newTab) => {
   }, 0)
 })
 
-// Export data to JSON file
-const exportData = async () => {
-  try {
-    const [chordData, pluckingData] = await Promise.all([
-      getAllProgress(),
-      getAllPluckingProgress()
-    ])
-
-    // Combine both data types
-    const exportedData = {
-      chordPractice: chordData,
-      pluckingPractice: pluckingData,
-      version: 1
-    }
-
-    // Create filename with timestamp
-    const now = new Date()
-    const timestamp = now.toISOString().replace(/[:.]/g, '-').slice(0, -5)
-    const filename = `fingerbuster-backup-${timestamp}.json`
-
-    // Create JSON blob
-    const jsonStr = JSON.stringify(exportedData, null, 2)
-    const blob = new Blob([jsonStr], { type: 'application/json' })
-
-    // Create download link and trigger download
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = filename
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    URL.revokeObjectURL(url)
-
-    console.log('Data exported successfully')
-  } catch (err) {
-    console.error('Error exporting data:', err)
-    error.value = `Failed to export data: ${(err as Error).message}`
-  }
-}
-
-// Import data from JSON file with merge logic
-const importData = async (event: Event) => {
-  const input = event.target as HTMLInputElement
-  const file = input.files?.[0]
-
-  if (!file) return
-
-  try {
-    const text = await file.text()
-    const parsed = JSON.parse(text)
-
-    let chordDataToImport: DailyProgress[] = []
-    let pluckingDataToImport: DailyPluckingProgress[] = []
-
-    // Check if it's the new format (object with version) or old format (array)
-    if (Array.isArray(parsed)) {
-      // Old format: only chord practice data
-      chordDataToImport = parsed
-    } else if (parsed.chordPractice || parsed.pluckingPractice) {
-      // New format: object with both types
-      chordDataToImport = parsed.chordPractice || []
-      pluckingDataToImport = parsed.pluckingPractice || []
-    } else {
-      throw new Error('Invalid data format')
-    }
-
-    // Import chord practice data
-    if (chordDataToImport.length > 0) {
-      const existingChordData = await getAllProgress()
-      const existingChordMap = new Map(existingChordData.map(d => [d.dateId, d]))
-
-      for (const importedDay of chordDataToImport) {
-        if (!importedDay.dateId || !importedDay.transitions) {
-          console.warn('Skipping invalid chord entry:', importedDay)
-          continue
-        }
-
-        const existing = existingChordMap.get(importedDay.dateId)
-
-        if (existing) {
-          // Merge: combine transitions
-          const combinedTransitions = [...existing.transitions, ...importedDay.transitions]
-          await db.dailyProgress.put({
-            dateId: importedDay.dateId,
-            transitions: combinedTransitions
-          })
-          console.log(`Merged chord data for ${importedDay.dateId}`)
-        } else {
-          // New date: add it
-          await db.dailyProgress.add({
-            dateId: importedDay.dateId,
-            transitions: importedDay.transitions
-          })
-          console.log(`Added new chord data for ${importedDay.dateId}`)
-        }
-      }
-    }
-
-    // Import plucking practice data
-    if (pluckingDataToImport.length > 0) {
-      const existingPluckingData = await getAllPluckingProgress()
-      const existingPluckingMap = new Map(existingPluckingData.map(d => [d.dateId, d]))
-
-      for (const importedDay of pluckingDataToImport) {
-        if (!importedDay.dateId || !importedDay.plucks) {
-          console.warn('Skipping invalid plucking entry:', importedDay)
-          continue
-        }
-
-        const existing = existingPluckingMap.get(importedDay.dateId)
-
-        if (existing) {
-          // Merge: combine plucks
-          const combinedPlucks = [...existing.plucks, ...importedDay.plucks]
-          await db.dailyPluckingProgress.put({
-            dateId: importedDay.dateId,
-            plucks: combinedPlucks
-          })
-          console.log(`Merged plucking data for ${importedDay.dateId}`)
-        } else {
-          // New date: add it
-          await db.dailyPluckingProgress.add({
-            dateId: importedDay.dateId,
-            plucks: importedDay.plucks
-          })
-          console.log(`Added new plucking data for ${importedDay.dateId}`)
-        }
-      }
-    }
-
-    // Reload the charts
-    await loadData()
-    console.log('Data imported and merged successfully')
-
-    // Clear the input
-    input.value = ''
-  } catch (err) {
-    console.error('Error importing data:', err)
-    error.value = `Failed to import data: ${(err as Error).message}`
-    input.value = ''
-  }
-}
-
 onMounted(() => {
   loadData()
 })
@@ -767,42 +687,18 @@ onMounted(() => {
 .chart-description {
   font-size: 0.875rem;
   color: #6b7280;
-  margin: 0;
+  margin: 0 0 0.5rem 0;
 }
 
-.data-controls {
-  display: flex;
-  gap: 0.75rem;
+.backup-note {
+  font-size: 0.8125rem;
+  color: #6366f1;
+  margin: 0.5rem 0 0 0;
+  font-style: italic;
 }
 
-.btn-export,
-.btn-import {
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
-  font-size: 0.875rem;
+.backup-note strong {
   font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-  border: none;
-}
-
-.btn-export {
-  background-color: #3b82f6;
-  color: white;
-}
-
-.btn-export:hover {
-  background-color: #2563eb;
-}
-
-.btn-import {
-  background-color: #10b981;
-  color: white;
-  display: inline-block;
-}
-
-.btn-import:hover {
-  background-color: #059669;
 }
 
 .chart-container {
@@ -960,5 +856,64 @@ onMounted(() => {
   background: #312e81;
   color: white;
   border-color: #312e81;
+}
+
+/* Accuracy container */
+.accuracy-container {
+  background: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.accuracy-description {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin-top: 0.5rem;
+  margin-bottom: 1rem;
+  font-style: italic;
+}
+
+.accuracy-value {
+  color: #1f2937;
+  font-weight: 600;
+  font-family: 'Courier New', monospace;
+}
+
+/* Accuracy color coding */
+.accuracy-excellent {
+  background-color: #d1fae5 !important;
+  border-left: 4px solid #10b981;
+}
+
+.accuracy-good {
+  background-color: #dbeafe !important;
+  border-left: 4px solid #3b82f6;
+}
+
+.accuracy-fair {
+  background-color: #fef3c7 !important;
+  border-left: 4px solid #f59e0b;
+}
+
+.accuracy-poor {
+  background-color: #fee2e2 !important;
+  border-left: 4px solid #ef4444;
+}
+
+.accuracy-excellent .overall-average {
+  color: #059669;
+}
+
+.accuracy-good .overall-average {
+  color: #2563eb;
+}
+
+.accuracy-fair .overall-average {
+  color: #d97706;
+}
+
+.accuracy-poor .overall-average {
+  color: #dc2626;
 }
 </style>
