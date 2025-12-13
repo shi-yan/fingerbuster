@@ -1,4 +1,4 @@
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
 import * as Tone from 'tone'
 
 // Guitar string tuning in standard tuning (string number -> base note)
@@ -74,40 +74,44 @@ export function useGuitarSampler() {
       // URL for tonejs-instruments guitar samples
       const baseUrl = 'https://nbrosowsky.github.io/tonejs-instruments/samples/guitar-acoustic/'
 
-      // Create a sampler with guitar samples
-      // Using a subset of notes for faster loading
-      sampler.value = new Tone.Sampler(
-        {
-          A2: 'A2.mp3',
-          A3: 'A3.mp3',
-          A4: 'A4.mp3',
-          'C3': 'C3.mp3',
-          'C4': 'C4.mp3',
-          'C5': 'C5.mp3',
-          'D#2': 'Ds2.mp3',
-          'D#3': 'Ds3.mp3',
-          'D#4': 'Ds4.mp3',
-          'F#2': 'Fs2.mp3',
-          'F#3': 'Fs3.mp3',
-          'F#4': 'Fs4.mp3'
-        },
-        {
-          baseUrl,
-          onload: () => {
-            isLoaded.value = true
-            isLoading.value = false
-            console.log('Guitar sampler loaded successfully')
+      // Create a sampler with guitar samples - return a Promise
+      await new Promise<void>((resolve, reject) => {
+        sampler.value = new Tone.Sampler(
+          {
+            A2: 'A2.mp3',
+            A3: 'A3.mp3',
+            A4: 'A4.mp3',
+            'C3': 'C3.mp3',
+            'C4': 'C4.mp3',
+            'C5': 'C5.mp3',
+            'D#2': 'Ds2.mp3',
+            'D#3': 'Ds3.mp3',
+            'D#4': 'Ds4.mp3',
+            'F#2': 'Fs2.mp3',
+            'F#3': 'Fs3.mp3',
+            'F#4': 'Fs4.mp3'
           },
-          onerror: (error) => {
-            console.error('Error loading guitar samples:', error)
-            isLoading.value = false
+          {
+            baseUrl,
+            onload: () => {
+              isLoaded.value = true
+              isLoading.value = false
+              console.log('Guitar sampler loaded successfully')
+              resolve()
+            },
+            onerror: (error) => {
+              console.error('Error loading guitar samples:', error)
+              isLoading.value = false
+              reject(error)
+            }
           }
-        }
-      ).toDestination()
+        ).toDestination()
+      })
 
     } catch (error) {
       console.error('Error initializing sampler:', error)
       isLoading.value = false
+      throw error
     }
   }
 
@@ -173,11 +177,6 @@ export function useGuitarSampler() {
       sampler.value.releaseAll()
     }
   }
-
-  // Auto-initialize on mount
-  onMounted(() => {
-    initializeSampler()
-  })
 
   return {
     isLoaded,

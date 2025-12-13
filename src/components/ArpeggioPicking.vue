@@ -145,9 +145,15 @@ let playbackSequence: number | null = null
 async function selectChord(chord: ChordData): Promise<void> {
   selectedChord.value = chord
 
-  // Start audio context on first interaction
+  // Initialize sampler and start audio context on first interaction
   if (!guitarSampler.isLoaded.value) {
-    await guitarSampler.startAudio()
+    try {
+      await guitarSampler.initializeSampler()
+      await guitarSampler.startAudio()
+      console.log('Audio initialized successfully')
+    } catch (error) {
+      console.error('Failed to initialize audio:', error)
+    }
   }
 }
 
@@ -168,8 +174,16 @@ function getFretForString(stringNum: number): number {
 async function playArpeggio(): Promise<void> {
   if (!selectedChord.value || isPlaying.value) return
 
-  // Start audio context
-  await guitarSampler.startAudio()
+  // Ensure sampler is loaded and audio context is started
+  try {
+    if (!guitarSampler.isLoaded.value) {
+      await guitarSampler.initializeSampler()
+    }
+    await guitarSampler.startAudio()
+  } catch (error) {
+    console.error('Failed to initialize audio:', error)
+    return
+  }
 
   isPlaying.value = true
   playbackProgress.value = 0
@@ -224,8 +238,16 @@ async function playArpeggio(): Promise<void> {
 async function playLoop(): Promise<void> {
   if (!selectedChord.value || isPlaying.value) return
 
-  // Start audio context
-  await guitarSampler.startAudio()
+  // Ensure sampler is loaded and audio context is started
+  try {
+    if (!guitarSampler.isLoaded.value) {
+      await guitarSampler.initializeSampler()
+    }
+    await guitarSampler.startAudio()
+  } catch (error) {
+    console.error('Failed to initialize audio:', error)
+    return
+  }
 
   isPlaying.value = true
   playbackProgress.value = 0
