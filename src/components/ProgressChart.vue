@@ -5,21 +5,7 @@
         <div>
           <h2>Progress Chart</h2>
           <p class="chart-description">Track your practice improvements</p>
-        </div>
-        <div class="data-controls">
-          <button @click="exportData" class="btn-export" title="Export data to JSON">
-            Export Data
-          </button>
-          <label for="import-file" class="btn-import" title="Import data from JSON">
-            Import Data
-            <input
-              id="import-file"
-              type="file"
-              accept="application/json"
-              @change="importData"
-              style="display: none"
-            />
-          </label>
+          <p class="backup-note">💡 Export/import data on the <strong>Connection</strong> page</p>
         </div>
       </div>
     </div>
@@ -185,7 +171,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue'
 import * as d3 from 'd3'
-import { getAllProgress, getAllPluckingProgress, type DailyProgress, type DailyPluckingProgress, db } from '../db/practiceDb'
+import { getAllProgress, getAllPluckingProgress, type DailyProgress, type DailyPluckingProgress } from '../db/practiceDb'
 
 // Tab state
 const activeTab = ref<'chord' | 'plucking'>('chord')
@@ -665,150 +651,6 @@ watch(activeTab, (newTab) => {
   }, 0)
 })
 
-// Export data to JSON file
-const exportData = async () => {
-  try {
-    const [chordData, pluckingData] = await Promise.all([
-      getAllProgress(),
-      getAllPluckingProgress()
-    ])
-
-    // Combine both data types
-    const exportedData = {
-      chordPractice: chordData,
-      pluckingPractice: pluckingData,
-      version: 1
-    }
-
-    // Create filename with timestamp
-    const now = new Date()
-    const timestamp = now.toISOString().replace(/[:.]/g, '-').slice(0, -5)
-    const filename = `fingerbuster-backup-${timestamp}.json`
-
-    // Create JSON blob
-    const jsonStr = JSON.stringify(exportedData, null, 2)
-    const blob = new Blob([jsonStr], { type: 'application/json' })
-
-    // Create download link and trigger download
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = filename
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    URL.revokeObjectURL(url)
-
-    console.log('Data exported successfully')
-  } catch (err) {
-    console.error('Error exporting data:', err)
-    error.value = `Failed to export data: ${(err as Error).message}`
-  }
-}
-
-// Import data from JSON file with merge logic
-const importData = async (event: Event) => {
-  const input = event.target as HTMLInputElement
-  const file = input.files?.[0]
-
-  if (!file) return
-
-  try {
-    const text = await file.text()
-    const parsed = JSON.parse(text)
-
-    let chordDataToImport: DailyProgress[] = []
-    let pluckingDataToImport: DailyPluckingProgress[] = []
-
-    // Check if it's the new format (object with version) or old format (array)
-    if (Array.isArray(parsed)) {
-      // Old format: only chord practice data
-      chordDataToImport = parsed
-    } else if (parsed.chordPractice || parsed.pluckingPractice) {
-      // New format: object with both types
-      chordDataToImport = parsed.chordPractice || []
-      pluckingDataToImport = parsed.pluckingPractice || []
-    } else {
-      throw new Error('Invalid data format')
-    }
-
-    // Import chord practice data
-    if (chordDataToImport.length > 0) {
-      const existingChordData = await getAllProgress()
-      const existingChordMap = new Map(existingChordData.map(d => [d.dateId, d]))
-
-      for (const importedDay of chordDataToImport) {
-        if (!importedDay.dateId || !importedDay.transitions) {
-          console.warn('Skipping invalid chord entry:', importedDay)
-          continue
-        }
-
-        const existing = existingChordMap.get(importedDay.dateId)
-
-        if (existing) {
-          // Merge: combine transitions
-          const combinedTransitions = [...existing.transitions, ...importedDay.transitions]
-          await db.dailyProgress.put({
-            dateId: importedDay.dateId,
-            transitions: combinedTransitions
-          })
-          console.log(`Merged chord data for ${importedDay.dateId}`)
-        } else {
-          // New date: add it
-          await db.dailyProgress.add({
-            dateId: importedDay.dateId,
-            transitions: importedDay.transitions
-          })
-          console.log(`Added new chord data for ${importedDay.dateId}`)
-        }
-      }
-    }
-
-    // Import plucking practice data
-    if (pluckingDataToImport.length > 0) {
-      const existingPluckingData = await getAllPluckingProgress()
-      const existingPluckingMap = new Map(existingPluckingData.map(d => [d.dateId, d]))
-
-      for (const importedDay of pluckingDataToImport) {
-        if (!importedDay.dateId || !importedDay.plucks) {
-          console.warn('Skipping invalid plucking entry:', importedDay)
-          continue
-        }
-
-        const existing = existingPluckingMap.get(importedDay.dateId)
-
-        if (existing) {
-          // Merge: combine plucks
-          const combinedPlucks = [...existing.plucks, ...importedDay.plucks]
-          await db.dailyPluckingProgress.put({
-            dateId: importedDay.dateId,
-            plucks: combinedPlucks
-          })
-          console.log(`Merged plucking data for ${importedDay.dateId}`)
-        } else {
-          // New date: add it
-          await db.dailyPluckingProgress.add({
-            dateId: importedDay.dateId,
-            plucks: importedDay.plucks
-          })
-          console.log(`Added new plucking data for ${importedDay.dateId}`)
-        }
-      }
-    }
-
-    // Reload the charts
-    await loadData()
-    console.log('Data imported and merged successfully')
-
-    // Clear the input
-    input.value = ''
-  } catch (err) {
-    console.error('Error importing data:', err)
-    error.value = `Failed to import data: ${(err as Error).message}`
-    input.value = ''
-  }
-}
-
 onMounted(() => {
   loadData()
 })
@@ -845,42 +687,18 @@ onMounted(() => {
 .chart-description {
   font-size: 0.875rem;
   color: #6b7280;
-  margin: 0;
+  margin: 0 0 0.5rem 0;
 }
 
-.data-controls {
-  display: flex;
-  gap: 0.75rem;
+.backup-note {
+  font-size: 0.8125rem;
+  color: #6366f1;
+  margin: 0.5rem 0 0 0;
+  font-style: italic;
 }
 
-.btn-export,
-.btn-import {
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
-  font-size: 0.875rem;
+.backup-note strong {
   font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-  border: none;
-}
-
-.btn-export {
-  background-color: #3b82f6;
-  color: white;
-}
-
-.btn-export:hover {
-  background-color: #2563eb;
-}
-
-.btn-import {
-  background-color: #10b981;
-  color: white;
-  display: inline-block;
-}
-
-.btn-import:hover {
-  background-color: #059669;
 }
 
 .chart-container {
