@@ -6,12 +6,9 @@
     </div>
 
     <!-- Audio Status -->
-    <div v-if="!guitarSampler.isLoaded.value" class="status-card">
-      <div v-if="guitarSampler.isLoading.value" class="loading">
+    <div v-if="guitarSampler.isLoading.value" class="status-card">
+      <div class="loading">
         Loading guitar sounds...
-      </div>
-      <div v-else class="info">
-        Select a chord and click Play to initialize audio
       </div>
     </div>
 
@@ -55,10 +52,10 @@
         <div class="playback-controls">
           <button
             @click="playArpeggio"
-            :disabled="isPlaying || !guitarSampler.isLoaded.value"
+            :disabled="!selectedChord || isPlaying || guitarSampler.isLoading.value"
             class="btn btn-play"
           >
-            {{ isPlaying ? 'Playing...' : 'Play Arpeggio' }}
+            {{ isPlaying ? 'Playing...' : guitarSampler.isLoading.value ? 'Loading...' : 'Play Arpeggio' }}
           </button>
 
           <button
@@ -71,10 +68,10 @@
 
           <button
             @click="playLoop"
-            :disabled="isPlaying || !guitarSampler.isLoaded.value"
+            :disabled="!selectedChord || isPlaying || guitarSampler.isLoading.value"
             class="btn btn-loop"
           >
-            Loop (4 measures)
+            {{ guitarSampler.isLoading.value ? 'Loading...' : 'Loop (4 measures)' }}
           </button>
         </div>
       </div>
@@ -164,14 +161,21 @@ function getFretForString(stringNum: number): number {
 async function playArpeggio(): Promise<void> {
   if (!selectedChord.value || isPlaying.value) return
 
-  // Ensure sampler is loaded and audio context is started
+  // Start audio context FIRST (before any Tone.js operations)
+  try {
+    await guitarSampler.startAudio()
+  } catch (error) {
+    console.error('Failed to start audio:', error)
+    return
+  }
+
+  // THEN ensure sampler is loaded
   try {
     if (!guitarSampler.isLoaded.value) {
       await guitarSampler.initializeSampler()
     }
-    await guitarSampler.startAudio()
   } catch (error) {
-    console.error('Failed to initialize audio:', error)
+    console.error('Failed to initialize sampler:', error)
     return
   }
 
@@ -231,14 +235,21 @@ async function playArpeggio(): Promise<void> {
 async function playLoop(): Promise<void> {
   if (!selectedChord.value || isPlaying.value) return
 
-  // Ensure sampler is loaded and audio context is started
+  // Start audio context FIRST (before any Tone.js operations)
+  try {
+    await guitarSampler.startAudio()
+  } catch (error) {
+    console.error('Failed to start audio:', error)
+    return
+  }
+
+  // THEN ensure sampler is loaded
   try {
     if (!guitarSampler.isLoaded.value) {
       await guitarSampler.initializeSampler()
     }
-    await guitarSampler.startAudio()
   } catch (error) {
-    console.error('Failed to initialize audio:', error)
+    console.error('Failed to initialize sampler:', error)
     return
   }
 
