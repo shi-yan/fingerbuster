@@ -35,6 +35,7 @@
         <ChordPractice v-else-if="currentView === 'chord-practice'" />
         <PracticeMode v-else-if="currentView === 'practice-mode'" />
         <PluckingPractice v-else-if="currentView === 'plucking-practice'" />
+        <ArpeggioPicking v-else-if="currentView === 'arpeggio-picking'" />
         <ProgressChart v-else-if="currentView === 'progress-chart'" />
       </div>
     </div>
@@ -47,9 +48,10 @@ import MidiConnection from './components/MidiConnection.vue'
 import ChordPractice from './components/ChordPractice.vue'
 import PracticeMode from './components/PracticeMode.vue'
 import PluckingPractice from './components/PluckingPractice.vue'
+import ArpeggioPicking from './components/ArpeggioPicking.vue'
 import ProgressChart from './components/ProgressChart.vue'
 
-type ViewId = 'connection' | 'chord-practice' | 'practice-mode' | 'plucking-practice' | 'progress-chart'
+type ViewId = 'connection' | 'chord-practice' | 'practice-mode' | 'plucking-practice' | 'arpeggio-picking' | 'progress-chart'
 
 interface MenuItem {
   id: ViewId
@@ -82,6 +84,12 @@ const menuItems: MenuItem[] = [
     label: 'Plucking Practice',
     description: 'Right-hand accuracy',
     icon: '🎵'
+  },
+  {
+    id: 'arpeggio-picking',
+    label: 'Arpeggio Picking',
+    description: 'Fingerpicking patterns',
+    icon: '🎼'
   },
   {
     id: 'progress-chart',
