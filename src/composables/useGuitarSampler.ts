@@ -2,6 +2,39 @@ import { ref, markRaw } from 'vue'
 // DON'T import Tone here - it will load immediately and create AudioContext
 // We'll dynamically import it only when needed
 
+/**
+ * IMPORTANT: Vue.js + Tone.js Integration Gotchas
+ *
+ * 1. NEVER import Tone.js at module level
+ *    ❌ import * as Tone from 'tone'  // Creates AudioContext on page load!
+ *    ✅ Use dynamic import: const Tone = await import('tone')
+ *
+ *    Reason: Browsers require AudioContext to be created from a user gesture.
+ *    Static imports happen before any user interaction, violating this policy.
+ *
+ * 2. ALWAYS use markRaw() for Tone.js objects
+ *    ❌ sampler.value = new Tone.Sampler(...)  // Vue wraps in Proxy!
+ *    ✅ sampler.value = markRaw(new Tone.Sampler(...))
+ *
+ *    Reason: Vue's reactivity wraps objects in a Proxy, which changes object identity.
+ *    Tone.js uses standardized-audio-context which checks object identity internally.
+ *    When wrapped in Proxy, these identity checks fail, causing InvalidStateError.
+ *
+ *    Example error without markRaw():
+ *    "Uncaught InvalidStateError at get-native-context.js:6"
+ *    "GainNode @ gain-node-constructor.js:11"
+ *
+ *    Reference: https://stackoverflow.com/questions/67253992/
+ *
+ * 3. Initialization order matters
+ *    ✅ Correct order:
+ *       1. User clicks button (user gesture)
+ *       2. Dynamic import Tone.js
+ *       3. Start AudioContext with Tone.start()
+ *       4. Create Sampler with markRaw()
+ *       5. Play notes
+ */
+
 // Guitar string tuning in standard tuning (string number -> base note)
 const GUITAR_TUNING: Record<number, string> = {
   1: 'E4', // High E

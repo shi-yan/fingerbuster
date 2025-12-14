@@ -30,12 +30,31 @@
         <h3>{{ selectedChord.name }} Chord Arpeggio</h3>
         <div class="pattern-description">
           <p><strong>Picking Pattern:</strong> {{ pickingPattern.join('-') }}</p>
+          <p><strong>Description:</strong> {{ selectedPattern?.description || '' }}</p>
           <p><strong>Tempo:</strong> {{ bpm }} BPM</p>
           <p><strong>Time Signature:</strong> 4/4 (8 eighth notes per measure)</p>
         </div>
       </div>
 
       <div class="controls">
+        <div class="pattern-selector">
+          <label for="pattern">Picking Pattern:</label>
+          <select
+            id="pattern"
+            v-model="selectedPatternId"
+            :disabled="isPlaying"
+            class="pattern-select"
+          >
+            <option
+              v-for="pattern in pickingPatterns"
+              :key="pattern.id"
+              :value="pattern.id"
+            >
+              {{ pattern.name }}
+            </option>
+          </select>
+        </div>
+
         <div class="tempo-control">
           <label for="tempo">Tempo (BPM):</label>
           <input
@@ -111,20 +130,51 @@ interface ChordData {
   string_6: ChordStringData
 }
 
+interface PickingPattern {
+  id: string
+  name: string
+  pattern: number[]
+  description: string
+}
+
 // Initialize guitar sampler
 const guitarSampler = useGuitarSampler()
 
-// Chord data - filter for G, C, D, Em
+// Chord data - filter for the arpeggio practice chords
 const chords = computed<ChordData[]>(() => {
-  const chordNames = ['G', 'C', 'D', 'Em']
+  const chordNames = ['G', 'C', 'D', 'Em', 'Cadd9', 'Am7', 'Em7']
   return (chordsData as ChordData[]).filter(chord => chordNames.includes(chord.name))
 })
 
 // Selected chord
 const selectedChord = ref<ChordData | null>(null)
 
-// Picking pattern: 5, 4, 2, 3, 1, 2, 3, 2 (8 eighth notes in 4/4 time)
-const pickingPattern = [5, 4, 2, 3, 1, 2, 3, 2]
+// Available picking patterns
+const pickingPatterns: PickingPattern[] = [
+  {
+    id: 'pattern1',
+    name: 'Pattern 1 (Bass-Mid-High)',
+    pattern: [5, 4, 2, 3, 1, 2, 3, 2],
+    description: 'Start from 5th string, descend to bass, then treble'
+  },
+  {
+    id: 'pattern2',
+    name: 'Pattern 2 (Bass-High-Mid)',
+    pattern: [6, 4, 2, 3, 1, 2, 3, 2],
+    description: 'Start from 6th string, classic bass-treble pattern'
+  }
+]
+
+// Selected pattern
+const selectedPatternId = ref('pattern1')
+const selectedPattern = computed(() => {
+  const pattern = pickingPatterns.find(p => p.id === selectedPatternId.value)
+  return pattern || pickingPatterns[0]
+})
+const pickingPattern = computed(() => {
+  const pattern = selectedPattern.value
+  return pattern ? pattern.pattern : pickingPatterns[0]!.pattern
+})
 
 // Tempo control
 const bpm = ref(80)
@@ -190,7 +240,7 @@ async function playArpeggio(): Promise<void> {
   playbackProgress.value = 0
 
   // Schedule the arpeggio pattern using simple setTimeout (no Transport)
-  const pattern = pickingPattern
+  const pattern = pickingPattern.value
   const totalNotes = pattern.length
   const noteInterval = (60 / bpm.value) / 2 * 1000 // Eighth note duration in ms
 
@@ -261,7 +311,7 @@ async function playLoop(): Promise<void> {
   isPlaying.value = true
   playbackProgress.value = 0
 
-  const pattern = pickingPattern
+  const pattern = pickingPattern.value
   const totalNotes = pattern.length
   const noteInterval = (60 / bpm.value) / 2 * 1000 // Eighth note duration in ms
   const loops = 4
@@ -395,6 +445,38 @@ function stopPlayback(): void {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+}
+
+.pattern-selector {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.pattern-selector label {
+  font-weight: 600;
+  color: #374151;
+  min-width: 120px;
+}
+
+.pattern-select {
+  flex: 1;
+  padding: 0.5rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 0.9375rem;
+  background: white;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+}
+
+.pattern-select:hover:not(:disabled) {
+  border-color: #3b82f6;
+}
+
+.pattern-select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .tempo-control {
