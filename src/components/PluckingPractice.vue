@@ -303,10 +303,13 @@ async function checkPlucking() {
       console.log(`   ✅ Correct! String ${string} matches expected ${expectedString} (after ${retryCount.value} retries)`)
       pluckedStringsInOrder.value.push(string)
 
+      // Calculate current time directly (don't rely on currentTime.value which updates via RAF)
+      const timeTaken = startTime.value !== null ? (Date.now() - startTime.value) / 1000 : 0
+
       // Save retry count for this string (attempts = retries + 1 for the correct pluck)
       const attempts = retryCount.value + 1
-      console.log(`   📊 Recording ${attempts} attempt(s) for string ${string}`)
-      await addStringPluck(string, currentTime.value, attempts)
+      console.log(`   📊 Recording ${attempts} attempt(s) for string ${string} at ${timeTaken.toFixed(2)}s`)
+      await addStringPluck(string, timeTaken, attempts)
 
       // Reset retry count for next string
       retryCount.value = 0

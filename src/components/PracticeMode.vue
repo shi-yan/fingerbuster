@@ -241,6 +241,9 @@ import { addChordTransition, getAllSavedProgressions, saveProgression, type Save
 
 const { fretPositions, stringsPlucked, pluckOrder, pluckedNotes, clearStringsPlucked } = sharedMidi
 
+// localStorage key for custom progression
+const STORAGE_KEY_PROGRESSION = 'practice-custom-progression'
+
 // Available chords from chords.json
 const availableChords = ref<string[]>(chordsData.map(c => c.name))
 
@@ -695,9 +698,29 @@ watch([() => fretPositions.value, () => stringsPlucked.value, () => pluckedNotes
   }
 }, { deep: true })
 
+// Watch for changes to custom progression and save to localStorage
+watch(customProgression, (newProgression) => {
+  localStorage.setItem(STORAGE_KEY_PROGRESSION, JSON.stringify(newProgression))
+  console.log(`💾 Saved custom progression to localStorage: ${newProgression.join(', ')}`)
+}, { deep: true })
+
 // Load saved progressions on mount
 onMounted(() => {
   loadSavedProgressions()
+
+  // Restore custom progression from localStorage
+  const savedProgression = localStorage.getItem(STORAGE_KEY_PROGRESSION)
+  if (savedProgression) {
+    try {
+      const parsed = JSON.parse(savedProgression)
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        customProgression.value = parsed
+        console.log(`✅ Restored custom progression from localStorage: ${parsed.join(', ')}`)
+      }
+    } catch (e) {
+      console.error('Failed to parse saved progression from localStorage', e)
+    }
+  }
 })
 </script>
 
