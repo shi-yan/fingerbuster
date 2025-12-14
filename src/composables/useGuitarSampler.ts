@@ -1,5 +1,6 @@
 import { ref } from 'vue'
-import * as Tone from 'tone'
+// DON'T import Tone here - it will load immediately and create AudioContext
+// We'll dynamically import it only when needed
 
 // Guitar string tuning in standard tuning (string number -> base note)
 const GUITAR_TUNING: Record<number, string> = {
@@ -17,7 +18,8 @@ const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 
 export function useGuitarSampler() {
   const isLoaded = ref(false)
   const isLoading = ref(false)
-  const sampler = ref<Tone.Sampler | null>(null)
+  const sampler = ref<any | null>(null)  // Type as 'any' since Tone.Sampler isn't imported yet
+  let Tone: any = null  // Will be loaded dynamically
 
   /**
    * Calculate the note name for a given string and fret
@@ -71,6 +73,14 @@ export function useGuitarSampler() {
     isLoading.value = true
 
     try {
+      // Dynamically import Tone.js ONLY when needed (on first play)
+      if (!Tone) {
+        console.log('📦 Dynamically importing Tone.js...')
+        const ToneModule = await import('tone')
+        Tone = ToneModule
+        console.log('✅ Tone.js imported')
+      }
+
       // URL for tonejs-instruments guitar samples
       const baseUrl = 'https://nbrosowsky.github.io/tonejs-instruments/samples/guitar-acoustic/'
 
@@ -96,11 +106,11 @@ export function useGuitarSampler() {
             onload: () => {
               isLoaded.value = true
               isLoading.value = false
-              console.log('Guitar sampler loaded successfully')
+              console.log('✅ Guitar sampler loaded successfully')
               resolve()
             },
-            onerror: (error) => {
-              console.error('Error loading guitar samples:', error)
+            onerror: (error: Error) => {
+              console.error('❌ Error loading guitar samples:', error)
               isLoading.value = false
               reject(error)
             }
@@ -109,7 +119,7 @@ export function useGuitarSampler() {
       })
 
     } catch (error) {
-      console.error('Error initializing sampler:', error)
+      console.error('❌ Error initializing sampler:', error)
       isLoading.value = false
       throw error
     }
@@ -163,9 +173,20 @@ export function useGuitarSampler() {
    * Start audio context (required for user interaction)
    */
   async function startAudio(): Promise<void> {
+    // Dynamically import Tone.js if not already loaded
+    if (!Tone) {
+      console.log('📦 Dynamically importing Tone.js for audio context...')
+      const ToneModule = await import('tone')
+      Tone = ToneModule
+      console.log('✅ Tone.js imported')
+    }
+
     if (Tone.context.state !== 'running') {
+      console.log('▶️ Starting AudioContext...')
       await Tone.start()
-      console.log('Audio context started')
+      console.log('✅ AudioContext started, state:', Tone.context.state)
+    } else {
+      console.log('ℹ️ AudioContext already running')
     }
   }
 
