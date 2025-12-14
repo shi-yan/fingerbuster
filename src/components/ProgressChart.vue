@@ -86,12 +86,17 @@
     <!-- Plucking Practice Tab -->
     <div v-if="activeTab === 'plucking'">
       <div class="chart-container card">
+        <h3 class="chart-section-title">Practice Time by String</h3>
         <div v-if="loading" class="loading-message">Loading chart data...</div>
         <div v-else-if="error" class="error-message">{{ error }}</div>
         <div v-else-if="!hasPluckingData" class="empty-message">
           No plucking practice data yet. Start practicing to see your progress!
         </div>
         <div v-else ref="pluckingChartRef" class="chart"></div>
+      </div>
+
+      <div v-if="hasPluckingData" class="chart-container card">
+        <div ref="pluckingAccuracyChartRef" class="chart"></div>
       </div>
 
       <div v-if="hasPluckingData" class="legend-container card">
@@ -185,6 +190,7 @@ const chordNames = ref<string[]>([])
 
 // Plucking practice data
 const pluckingChartRef = ref<HTMLElement | null>(null)
+const pluckingAccuracyChartRef = ref<HTMLElement | null>(null)
 const pluckingProgressData = ref<DailyPluckingProgress[]>([])
 const stringNumbers = ref<number[]>([])
 
@@ -611,6 +617,157 @@ const drawPluckingChart = () => {
     .attr('stroke-width', 1)
 }
 
+// Draw plucking accuracy chart (line chart showing attempts over time)
+const drawPluckingAccuracyChart = () => {
+  if (!pluckingAccuracyChartRef.value) return
+
+  // Clear previous chart
+  d3.select(pluckingAccuracyChartRef.value).selectAll('*').remove()
+
+  const data = pluckingAccuracyData.value
+  if (data.length === 0) return
+
+  // Extract all unique string numbers from accuracy data
+  const allStrings = new Set<number>()
+  data.forEach(d => {
+    d.accuracies.forEach(acc => allStrings.add(acc.string))
+  })
+  const strings = Array.from(allStrings).sort((a, b) => a - b)
+
+  // Chart dimensions
+  const width = 928
+  const height = 400
+  const marginTop = 40
+  const marginRight = 100
+  const marginBottom = 60
+  const marginLeft = 60
+
+  // Scales
+  const x = d3.scalePoint()
+    .domain(data.map(d => d.date))
+    .range([marginLeft, width - marginRight])
+
+  const maxAttempts = d3.max(data, d => d3.max(d.accuracies, acc => acc.attempts)) || 5
+  const y = d3.scaleLinear()
+    .domain([1, maxAttempts])  // Start from 1.0 (perfect accuracy)
+    .nice()
+    .range([height - marginBottom, marginTop])
+
+  // Line generator
+  const line = d3.line<{ date: string; attempts: number }>()
+    .x(d => x(d.date) || 0)
+    .y(d => y(d.attempts))
+    .defined(d => !isNaN(d.attempts))
+
+  // Create SVG
+  const svg = d3.select(pluckingAccuracyChartRef.value)
+    .append('svg')
+    .attr('width', width)
+    .attr('height', height)
+    .attr('viewBox', [0, 0, width, height])
+    .attr('style', 'max-width: 100%; height: auto;')
+
+  // Add a background reference area for "good" accuracy (1.0-2.0)
+  const goodAccuracyMax = Math.min(2, y.domain()[1])
+  svg.append('rect')
+    .attr('x', marginLeft)
+    .attr('y', y(goodAccuracyMax))
+    .attr('width', width - marginLeft - marginRight)
+    .attr('height', y(1) - y(goodAccuracyMax))
+    .attr('fill', '#d1fae5')
+    .attr('opacity', 0.2)
+
+  // Add lines for each string
+  strings.forEach(stringNum => {
+    // Get data points for this string
+    const stringData = data.map(d => {
+      const acc = d.accuracies.find(a => a.string === stringNum)
+      return {
+        date: d.date,
+        attempts: acc ? acc.attempts : NaN
+      }
+    }).filter(d => !isNaN(d.attempts))
+
+    if (stringData.length === 0) return
+
+    // Draw line
+    svg.append('path')
+      .datum(stringData)
+      .attr('fill', 'none')
+      .attr('stroke', stringColorScale(stringNum.toString()))
+      .attr('stroke-width', 2.5)
+      .attr('stroke-linejoin', 'round')
+      .attr('stroke-linecap', 'round')
+      .attr('d', line)
+
+    // Add dots at each data point
+    svg.append('g')
+      .selectAll('circle')
+      .data(stringData)
+      .join('circle')
+      .attr('cx', d => x(d.date) || 0)
+      .attr('cy', d => y(d.attempts))
+      .attr('r', 4)
+      .attr('fill', stringColorScale(stringNum.toString()))
+      .attr('stroke', 'white')
+      .attr('stroke-width', 2)
+      .append('title')
+      .text(d => `String ${stringNum}: ${d.attempts.toFixed(2)} attempts`)
+  })
+
+  // Y-axis
+  svg.append('g')
+    .attr('transform', `translate(${marginLeft},0)`)
+    .call(d3.axisLeft(y).ticks(height / 60))
+    .call(g => g.select('.domain').remove())
+    .call(g => g.selectAll('.tick line').clone()
+      .attr('x2', width - marginLeft - marginRight)
+      .attr('stroke-opacity', 0.1))
+    .call(g => g.append('text')
+      .attr('x', -marginLeft)
+      .attr('y', 15)
+      .attr('fill', 'currentColor')
+      .attr('text-anchor', 'start')
+      .text('↓ Average Attempts (lower is better)'))
+
+  // X-axis
+  svg.append('g')
+    .attr('transform', `translate(0,${height - marginBottom})`)
+    .call(d3.axisBottom(x).tickSizeOuter(0))
+    .selectAll('text')
+    .attr('transform', 'rotate(-45)')
+    .style('text-anchor', 'end')
+
+  // Add reference line at 1.0 (perfect accuracy)
+  svg.append('line')
+    .attr('x1', marginLeft)
+    .attr('x2', width - marginRight)
+    .attr('y1', y(1))
+    .attr('y2', y(1))
+    .attr('stroke', '#10b981')
+    .attr('stroke-width', 2)
+    .attr('stroke-dasharray', '5,5')
+
+  // Add label for perfect accuracy line
+  svg.append('text')
+    .attr('x', width - marginRight + 5)
+    .attr('y', y(1) + 5)
+    .attr('fill', '#10b981')
+    .attr('font-size', 12)
+    .attr('font-weight', 'bold')
+    .text('Perfect')
+
+  // Add chart title
+  svg.append('text')
+    .attr('x', width / 2)
+    .attr('y', 20)
+    .attr('text-anchor', 'middle')
+    .attr('font-size', 16)
+    .attr('font-weight', 'bold')
+    .attr('fill', '#1f2937')
+    .text('Plucking Accuracy Over Time')
+}
+
 const loadData = async () => {
   loading.value = true
   error.value = null
@@ -631,6 +788,7 @@ const loadData = async () => {
         drawChart()
       } else if (activeTab.value === 'plucking' && pluckingData.length > 0) {
         drawPluckingChart()
+        drawPluckingAccuracyChart()
       }
     }, 0)
   } catch (err) {
@@ -647,6 +805,7 @@ watch(activeTab, (newTab) => {
       drawChart()
     } else if (newTab === 'plucking' && pluckingProgressData.value.length > 0) {
       drawPluckingChart()
+      drawPluckingAccuracyChart()
     }
   }, 0)
 })
@@ -705,8 +864,17 @@ onMounted(() => {
   padding: 1.5rem;
   min-height: 500px;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+}
+
+.chart-section-title {
+  font-size: 1.125rem;
+  font-weight: bold;
+  color: #1f2937;
+  margin: 0 0 1rem 0;
+  align-self: flex-start;
 }
 
 .chart {
