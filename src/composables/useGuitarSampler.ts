@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { ref, markRaw } from 'vue'
 // DON'T import Tone here - it will load immediately and create AudioContext
 // We'll dynamically import it only when needed
 
@@ -85,8 +85,10 @@ export function useGuitarSampler() {
       const baseUrl = 'https://nbrosowsky.github.io/tonejs-instruments/samples/guitar-acoustic/'
 
       // Create a sampler with guitar samples - return a Promise
+      // Use markRaw() to prevent Vue from making the Sampler reactive
+      // This fixes InvalidStateError caused by Vue's Proxy wrapping
       await new Promise<void>((resolve, reject) => {
-        sampler.value = new Tone.Sampler(
+        const newSampler = new Tone.Sampler(
           {
             A2: 'A2.mp3',
             A3: 'A3.mp3',
@@ -116,6 +118,9 @@ export function useGuitarSampler() {
             }
           }
         ).toDestination()
+
+        // Wrap with markRaw to prevent Vue reactivity
+        sampler.value = markRaw(newSampler)
       })
 
     } catch (error) {
