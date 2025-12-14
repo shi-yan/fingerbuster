@@ -31,21 +31,23 @@
         />
 
         <!-- Vertical lines (strings) -->
+        <!-- String 6 (low E) on left, string 1 (high e) on right -->
         <line
           v-for="string in 6"
           :key="`string-${string}`"
-          :x1="(string - 1) * stringSpacing"
+          :x1="(6 - string) * stringSpacing"
           :y1="0"
-          :x2="(string - 1) * stringSpacing"
+          :x2="(6 - string) * stringSpacing"
           :y2="numFrets * fretHeight"
           stroke="#333"
           stroke-width="1"
         />
 
         <!-- Finger positions (colored dots with numbers) -->
+        <!-- String 6 (low E) on left, string 1 (high e) on right -->
         <g v-for="position in fingerPositions" :key="`finger-${position.string}`">
           <circle
-            :cx="(position.string - 1) * stringSpacing"
+            :cx="(6 - position.string) * stringSpacing"
             :cy="position.fret * fretHeight - fretHeight / 2"
             :r="dotRadius"
             :fill="getFingerColor(position.finger)"
@@ -54,7 +56,7 @@
           />
           <text
             v-if="position.finger > 0"
-            :x="(position.string - 1) * stringSpacing"
+            :x="(6 - position.string) * stringSpacing"
             :y="position.fret * fretHeight - fretHeight / 2 + 5"
             text-anchor="middle"
             class="finger-number"
@@ -144,9 +146,10 @@ const fingerPositions = computed<FingerPosition[]>(() => {
   return positions
 })
 
-// Get X coordinate for a string (1-6, where 1 is high E)
+// Get X coordinate for a string (1-6, where 1 is high E, 6 is low E)
+// Standard guitar diagrams: string 6 (low E) on LEFT, string 1 (high e) on RIGHT
 function getStringX(string: number): number {
-  return padding + (string - 1) * stringSpacing
+  return padding + (6 - string) * stringSpacing
 }
 
 // Get string status (x for muted, o for open, empty for fretted)
