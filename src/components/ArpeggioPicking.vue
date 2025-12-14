@@ -109,10 +109,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import ChordCard from './ChordCard.vue'
 import { useGuitarSampler } from '../composables/useGuitarSampler'
 import chordsData from '../data/chords.json'
+
+// localStorage keys
+const STORAGE_KEY_CHORD = 'arpeggio-selected-chord'
+const STORAGE_KEY_PATTERN = 'arpeggio-selected-pattern'
 
 interface ChordStringData {
   play: boolean
@@ -183,6 +187,47 @@ const bpm = ref(80)
 const isPlaying = ref(false)
 const currentPlayingString = ref<number | null>(null)
 const playbackProgress = ref(0)
+
+/**
+ * Load saved selections from localStorage on mount
+ */
+onMounted(() => {
+  // Restore selected pattern
+  const savedPatternId = localStorage.getItem(STORAGE_KEY_PATTERN)
+  if (savedPatternId && pickingPatterns.some(p => p.id === savedPatternId)) {
+    selectedPatternId.value = savedPatternId
+  }
+
+  // Restore selected chord
+  const savedChordName = localStorage.getItem(STORAGE_KEY_CHORD)
+  if (savedChordName) {
+    const chord = chords.value.find(c => c.name === savedChordName)
+    if (chord) {
+      selectedChord.value = chord
+      console.log(`✅ Restored chord selection from localStorage: ${savedChordName}`)
+    }
+  }
+})
+
+/**
+ * Watch for changes to selected chord and save to localStorage
+ */
+watch(selectedChord, (newChord) => {
+  if (newChord) {
+    localStorage.setItem(STORAGE_KEY_CHORD, newChord.name)
+    console.log(`💾 Saved chord selection to localStorage: ${newChord.name}`)
+  } else {
+    localStorage.removeItem(STORAGE_KEY_CHORD)
+  }
+})
+
+/**
+ * Watch for changes to selected pattern and save to localStorage
+ */
+watch(selectedPatternId, (newPatternId) => {
+  localStorage.setItem(STORAGE_KEY_PATTERN, newPatternId)
+  console.log(`💾 Saved pattern selection to localStorage: ${newPatternId}`)
+})
 
 /**
  * Select a chord
