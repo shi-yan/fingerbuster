@@ -182,6 +182,11 @@ async function playArpeggio(): Promise<void> {
   isPlaying.value = true
   playbackProgress.value = 0
 
+  // Stop and reset Transport before scheduling new events
+  Tone.Transport.stop()
+  Tone.Transport.cancel() // Cancel all scheduled events
+  Tone.Transport.position = 0 // Reset position
+
   // Set Tone.js transport BPM
   Tone.Transport.bpm.value = bpm.value
 
@@ -219,9 +224,10 @@ async function playArpeggio(): Promise<void> {
   Tone.Transport.start()
 
   // Stop after pattern completes
-  const patternDuration = (60 / bpm.value) * 2 // 2 beats = 4 eighth notes = full measure in 4/4
+  const patternDuration = (60 / bpm.value) * 2 // 2 beats = 8 eighth notes
   setTimeout(() => {
     Tone.Transport.stop()
+    Tone.Transport.cancel()
     part.dispose()
     isPlaying.value = false
     currentPlayingString.value = null
@@ -255,6 +261,11 @@ async function playLoop(): Promise<void> {
 
   isPlaying.value = true
   playbackProgress.value = 0
+
+  // Stop and reset Transport before scheduling new events
+  Tone.Transport.stop()
+  Tone.Transport.cancel() // Cancel all scheduled events
+  Tone.Transport.position = 0 // Reset position
 
   // Set Tone.js transport BPM
   Tone.Transport.bpm.value = bpm.value
@@ -309,6 +320,7 @@ async function playLoop(): Promise<void> {
   // Stop after 4 loops
   setTimeout(() => {
     Tone.Transport.stop()
+    Tone.Transport.cancel()
     part.dispose()
     isPlaying.value = false
     currentPlayingString.value = null
