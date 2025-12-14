@@ -161,21 +161,25 @@ async function playArpeggio(): Promise<void> {
 
   console.log('🎸 Play button clicked - starting playback...')
 
-  // Start audio context FIRST (before any Tone.js operations)
+  // CRITICAL: Start audio context FIRST, before creating any Tone.js objects
+  // This ensures AudioContext is running BEFORE the Sampler is created
   try {
-    await guitarSampler.startAudio()
-    console.log('✅ Audio context started')
+    console.log('⏳ Step 1: Starting audio context...')
+    await guitarSampler.startAudio()  // This also imports Tone.js
+    console.log('✅ Step 1 complete: Audio context is running')
   } catch (error) {
     console.error('❌ Failed to start audio:', error)
     return
   }
 
-  // THEN ensure sampler is loaded
+  // THEN create the sampler (with AudioContext already running)
   try {
     if (!guitarSampler.isLoaded.value) {
-      console.log('⏳ Loading sampler...')
+      console.log('⏳ Step 2: Creating sampler with running AudioContext...')
       await guitarSampler.initializeSampler()
-      console.log('✅ Sampler loaded')
+      console.log('✅ Step 2 complete: Sampler created and samples loaded')
+    } else {
+      console.log('ℹ️ Sampler already loaded, skipping Step 2')
     }
   } catch (error) {
     console.error('❌ Failed to initialize sampler:', error)
@@ -230,21 +234,24 @@ async function playLoop(): Promise<void> {
 
   console.log('🔁 Loop button clicked - starting looped playback...')
 
-  // Start audio context FIRST (before any Tone.js operations)
+  // CRITICAL: Start audio context FIRST, before creating any Tone.js objects
   try {
+    console.log('⏳ Step 1: Starting audio context...')
     await guitarSampler.startAudio()
-    console.log('✅ Audio context started')
+    console.log('✅ Step 1 complete: Audio context is running')
   } catch (error) {
     console.error('❌ Failed to start audio:', error)
     return
   }
 
-  // THEN ensure sampler is loaded
+  // THEN create the sampler (with AudioContext already running)
   try {
     if (!guitarSampler.isLoaded.value) {
-      console.log('⏳ Loading sampler...')
+      console.log('⏳ Step 2: Creating sampler with running AudioContext...')
       await guitarSampler.initializeSampler()
-      console.log('✅ Sampler loaded')
+      console.log('✅ Step 2 complete: Sampler created and samples loaded')
+    } else {
+      console.log('ℹ️ Sampler already loaded, skipping Step 2')
     }
   } catch (error) {
     console.error('❌ Failed to initialize sampler:', error)
