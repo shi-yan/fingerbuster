@@ -5,4 +5,8 @@ import vue from '@vitejs/plugin-vue'
 export default defineConfig({
   plugins: [vue()],
   base: '/fingerbuster/',
+  build: {
+    minify: false, // Disable minification for debugging
+    sourcemap: true
+  }
 })

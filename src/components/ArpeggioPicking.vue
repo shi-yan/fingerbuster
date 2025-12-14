@@ -93,7 +93,6 @@
 import { ref, computed } from 'vue'
 import ChordCard from './ChordCard.vue'
 import { useGuitarSampler } from '../composables/useGuitarSampler'
-import * as Tone from 'tone'
 import chordsData from '../data/chords.json'
 
 interface ChordStringData {
@@ -134,7 +133,6 @@ const bpm = ref(80)
 const isPlaying = ref(false)
 const currentPlayingString = ref<number | null>(null)
 const playbackProgress = ref(0)
-let playbackSequence: number | null = null
 
 /**
  * Select a chord
@@ -161,78 +159,67 @@ function getFretForString(stringNum: number): number {
 async function playArpeggio(): Promise<void> {
   if (!selectedChord.value || isPlaying.value) return
 
+  console.log('🎸 Play button clicked - starting playback...')
+
   // Start audio context FIRST (before any Tone.js operations)
   try {
     await guitarSampler.startAudio()
+    console.log('✅ Audio context started')
   } catch (error) {
-    console.error('Failed to start audio:', error)
+    console.error('❌ Failed to start audio:', error)
     return
   }
 
   // THEN ensure sampler is loaded
   try {
     if (!guitarSampler.isLoaded.value) {
+      console.log('⏳ Loading sampler...')
       await guitarSampler.initializeSampler()
+      console.log('✅ Sampler loaded')
     }
   } catch (error) {
-    console.error('Failed to initialize sampler:', error)
+    console.error('❌ Failed to initialize sampler:', error)
     return
   }
 
   isPlaying.value = true
   playbackProgress.value = 0
 
-  // Stop and reset Transport before scheduling new events
-  Tone.Transport.stop()
-  Tone.Transport.cancel() // Cancel all scheduled events
-  Tone.Transport.position = 0 // Reset position
-
-  // Set Tone.js transport BPM
-  Tone.Transport.bpm.value = bpm.value
-
-  // Schedule the arpeggio pattern
+  // Schedule the arpeggio pattern using simple setTimeout (no Transport)
   const pattern = pickingPattern
   const totalNotes = pattern.length
+  const noteInterval = (60 / bpm.value) / 2 * 1000 // Eighth note duration in ms
 
-  // Create a Tone.js Part to schedule notes
-  const part = new Tone.Part((time, value) => {
-    const stringNum = value.string
-    const fret = getFretForString(stringNum)
-    const note = guitarSampler.getNoteForStringAndFret(stringNum, fret)
+  console.log(`🎵 Playing ${totalNotes} notes with ${noteInterval}ms interval`)
 
-    // Play the note with scheduled time
-    if (guitarSampler.sampler.value) {
-      guitarSampler.sampler.value.triggerAttackRelease(note, '8n', time)
-    }
+  // Play each note with setTimeout
+  pattern.forEach((stringNum, index) => {
+    setTimeout(() => {
+      const fret = getFretForString(stringNum)
+      const note = guitarSampler.getNoteForStringAndFret(stringNum, fret)
 
-    // Update UI (schedule UI update slightly ahead for visual feedback)
-    Tone.Draw.schedule(() => {
+      console.log(`  🎵 Note ${index + 1}/${totalNotes}: String ${stringNum}, Fret ${fret}, Note ${note}`)
+
+      // Play the note directly (no scheduling, play NOW)
+      if (guitarSampler.sampler.value) {
+        guitarSampler.sampler.value.triggerAttackRelease(note, '8n')
+      }
+
+      // Update UI
       currentPlayingString.value = stringNum
-      playbackProgress.value = (value.index + 1) / totalNotes * 100
-    }, time)
-  }, pattern.map((string, index) => ({
-    time: `0:0:${index}`, // Each note on successive 8th notes
-    string,
-    index
-  })))
+      playbackProgress.value = (index + 1) / totalNotes * 100
 
-  // Start at beginning
-  part.start(0)
-  part.loop = false
-
-  // Start transport
-  Tone.Transport.start()
-
-  // Stop after pattern completes
-  const patternDuration = (60 / bpm.value) * 2 // 2 beats = 8 eighth notes
-  setTimeout(() => {
-    Tone.Transport.stop()
-    Tone.Transport.cancel()
-    part.dispose()
-    isPlaying.value = false
-    currentPlayingString.value = null
-    playbackProgress.value = 0
-  }, patternDuration * 1000)
+      // Clear on last note
+      if (index === totalNotes - 1) {
+        setTimeout(() => {
+          isPlaying.value = false
+          currentPlayingString.value = null
+          playbackProgress.value = 0
+          console.log('✅ Playback complete')
+        }, 500)
+      }
+    }, index * noteInterval)
+  })
 }
 
 /**
@@ -241,112 +228,84 @@ async function playArpeggio(): Promise<void> {
 async function playLoop(): Promise<void> {
   if (!selectedChord.value || isPlaying.value) return
 
+  console.log('🔁 Loop button clicked - starting looped playback...')
+
   // Start audio context FIRST (before any Tone.js operations)
   try {
     await guitarSampler.startAudio()
+    console.log('✅ Audio context started')
   } catch (error) {
-    console.error('Failed to start audio:', error)
+    console.error('❌ Failed to start audio:', error)
     return
   }
 
   // THEN ensure sampler is loaded
   try {
     if (!guitarSampler.isLoaded.value) {
+      console.log('⏳ Loading sampler...')
       await guitarSampler.initializeSampler()
+      console.log('✅ Sampler loaded')
     }
   } catch (error) {
-    console.error('Failed to initialize sampler:', error)
+    console.error('❌ Failed to initialize sampler:', error)
     return
   }
 
   isPlaying.value = true
   playbackProgress.value = 0
 
-  // Stop and reset Transport before scheduling new events
-  Tone.Transport.stop()
-  Tone.Transport.cancel() // Cancel all scheduled events
-  Tone.Transport.position = 0 // Reset position
-
-  // Set Tone.js transport BPM
-  Tone.Transport.bpm.value = bpm.value
-
   const pattern = pickingPattern
   const totalNotes = pattern.length
+  const noteInterval = (60 / bpm.value) / 2 * 1000 // Eighth note duration in ms
+  const loops = 4
 
-  // Create a repeating pattern
-  const part = new Tone.Part((time, value) => {
-    const stringNum = value.string
-    const fret = getFretForString(stringNum)
-    const note = guitarSampler.getNoteForStringAndFret(stringNum, fret)
+  console.log(`🔁 Playing ${loops} loops of ${totalNotes} notes with ${noteInterval}ms interval`)
 
-    // Play the note with scheduled time
-    if (guitarSampler.sampler.value) {
-      guitarSampler.sampler.value.triggerAttackRelease(note, '8n', time)
-    }
+  // Play each note in all 4 loops
+  for (let loopIndex = 0; loopIndex < loops; loopIndex++) {
+    pattern.forEach((stringNum, noteIndex) => {
+      const absoluteIndex = loopIndex * totalNotes + noteIndex
+      const delay = absoluteIndex * noteInterval
 
-    Tone.Draw.schedule(() => {
-      currentPlayingString.value = stringNum
-      const currentLoop = Math.floor(value.absoluteIndex / totalNotes)
-      const noteInLoop = value.absoluteIndex % totalNotes
-      playbackProgress.value = ((currentLoop * totalNotes) + noteInLoop + 1) / (totalNotes * 4) * 100
-    }, time)
-  }, pattern.map((string, index) => ({
-    time: `0:0:${index}`,
-    string,
-    index,
-    absoluteIndex: index
-  })))
+      setTimeout(() => {
+        const fret = getFretForString(stringNum)
+        const note = guitarSampler.getNoteForStringAndFret(stringNum, fret)
 
-  part.start(0)
-  part.loop = 4 // Loop 4 times
-  part.loopEnd = '2n' // Each loop is 2 quarter notes (1 measure in our pattern)
+        console.log(`  🎵 Loop ${loopIndex + 1}/${loops}, Note ${noteIndex + 1}/${totalNotes}: String ${stringNum}, Fret ${fret}, Note ${note}`)
 
-  // Manually track loop iterations for UI
-  let loopCount = 0
-  const loopDuration = (60 / bpm.value) * 2 // Duration of one measure
+        // Play the note directly
+        if (guitarSampler.sampler.value) {
+          guitarSampler.sampler.value.triggerAttackRelease(note, '8n')
+        }
 
-  const updateLoop = () => {
-    loopCount++
-    if (loopCount < 4) {
-      playbackSequence = window.setTimeout(updateLoop, loopDuration * 1000)
-    }
+        // Update UI
+        currentPlayingString.value = stringNum
+        playbackProgress.value = (absoluteIndex + 1) / (totalNotes * loops) * 100
+
+        // Clear on last note of last loop
+        if (loopIndex === loops - 1 && noteIndex === totalNotes - 1) {
+          setTimeout(() => {
+            isPlaying.value = false
+            currentPlayingString.value = null
+            playbackProgress.value = 0
+            console.log('✅ Loop playback complete')
+          }, 500)
+        }
+      }, delay)
+    })
   }
-
-  Tone.Transport.start()
-
-  // Update loop counter
-  playbackSequence = window.setTimeout(updateLoop, loopDuration * 1000)
-
-  // Stop after 4 loops
-  setTimeout(() => {
-    Tone.Transport.stop()
-    Tone.Transport.cancel()
-    part.dispose()
-    isPlaying.value = false
-    currentPlayingString.value = null
-    playbackProgress.value = 0
-    if (playbackSequence !== null) {
-      clearTimeout(playbackSequence)
-      playbackSequence = null
-    }
-  }, loopDuration * 4 * 1000)
 }
 
 /**
  * Stop current playback
  */
 function stopPlayback(): void {
-  Tone.Transport.stop()
-  Tone.Transport.cancel() // Cancel all scheduled events
+  console.log('⏹️ Stop button clicked')
   guitarSampler.stopAll()
   isPlaying.value = false
   currentPlayingString.value = null
   playbackProgress.value = 0
-
-  if (playbackSequence !== null) {
-    clearTimeout(playbackSequence)
-    playbackSequence = null
-  }
+  // Note: Can't cancel setTimeout callbacks, but state is reset
 }
 </script>
 
