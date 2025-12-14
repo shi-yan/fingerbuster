@@ -668,7 +668,7 @@ const drawPluckingAccuracyChart = () => {
     .attr('style', 'max-width: 100%; height: auto;')
 
   // Add a background reference area for "good" accuracy (1.0-2.0)
-  const goodAccuracyMax = Math.min(2, y.domain()[1])
+  const goodAccuracyMax = Math.min(2, y.domain()[1] ?? 5)
   svg.append('rect')
     .attr('x', marginLeft)
     .attr('y', y(goodAccuracyMax))
