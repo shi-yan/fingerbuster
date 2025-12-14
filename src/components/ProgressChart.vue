@@ -623,7 +623,7 @@ const transformPluckingAccuracyData = (): ChartDataPoint[] => {
   const dataByDate = new Map<string, ChartDataPoint>()
 
   pluckingAccuracyData.value.forEach(dailyData => {
-    const dataPoint: ChartDataPoint = { date: dailyData.dateId }
+    const dataPoint: ChartDataPoint = { date: dailyData.date }
 
     // Add accuracy (average attempts) for each string
     dailyData.accuracies.forEach(acc => {
@@ -631,7 +631,7 @@ const transformPluckingAccuracyData = (): ChartDataPoint[] => {
       dataPoint[stringKey] = acc.attempts
     })
 
-    dataByDate.set(dailyData.dateId, dataPoint)
+    dataByDate.set(dailyData.date, dataPoint)
   })
 
   return Array.from(dataByDate.values()).sort((a, b) => a.date.localeCompare(b.date))
