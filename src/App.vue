@@ -117,6 +117,7 @@ const currentView = ref<ViewId>('connection')
   box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
   display: flex;
   flex-direction: column;
+  overflow-y: auto;
 }
 
 .sidebar-header {
