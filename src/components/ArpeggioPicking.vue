@@ -142,7 +142,7 @@ const guitarSampler = useGuitarSampler()
 
 // Chord data - filter for the arpeggio practice chords
 const chords = computed<ChordData[]>(() => {
-  const chordNames = ['G', 'C', 'D', 'Em', 'Cadd9', 'Am7', 'Em7']
+  const chordNames = ['Galt', 'C', 'D', 'Em', 'Cadd9', 'Am7', 'Em7']
   return (chordsData as ChordData[]).filter(chord => chordNames.includes(chord.name))
 })
 

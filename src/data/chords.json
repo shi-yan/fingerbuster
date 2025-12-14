@@ -339,13 +339,13 @@
     "name": "Cadd9",
     "string_1": {
       "play": true,
-      "fret": 0,
-      "finger": 0
+      "fret": 3,
+      "finger": 4
     },
     "string_2": {
       "play": true,
       "fret": 3,
-      "finger": 4
+      "finger": 3
     },
     "string_3": {
       "play": true,
@@ -355,12 +355,12 @@
     "string_4": {
       "play": true,
       "fret": 2,
-      "finger": 2
+      "finger": 1
     },
     "string_5": {
       "play": true,
       "fret": 3,
-      "finger": 3
+      "finger": 2
     },
     "string_6": {
       "play": false,
@@ -372,8 +372,8 @@
     "name": "Am7",
     "string_1": {
       "play": true,
-      "fret": 0,
-      "finger": 0
+      "fret": 3,
+      "finger": 3
     },
     "string_2": {
       "play": true,
@@ -405,13 +405,46 @@
     "name": "Em7",
     "string_1": {
       "play": true,
-      "fret": 0,
-      "finger": 0
+      "fret": 3,
+      "finger": 4
     },
     "string_2": {
       "play": true,
       "fret": 3,
+      "finger": 3
+    },
+    "string_3": {
+      "play": true,
+      "fret": 0,
+      "finger": 0
+    },
+    "string_4": {
+      "play": true,
+      "fret": 2,
+      "finger": 2
+    },
+    "string_5": {
+      "play": true,
+      "fret": 2,
+      "finger": 1
+    },
+    "string_6": {
+      "play": true,
+      "fret": 0,
+      "finger": 0
+    }
+  },
+  {
+    "name": "Galt",
+    "string_1": {
+      "play": true,
+      "fret": 3,
       "finger": 4
+    },
+    "string_2": {
+      "play": true,
+      "fret": 3,
+      "finger": 3
     },
     "string_3": {
       "play": true,
@@ -426,12 +459,12 @@
     "string_5": {
       "play": true,
       "fret": 2,
-      "finger": 2
+      "finger": 1
     },
     "string_6": {
       "play": true,
-      "fret": 0,
-      "finger": 0
+      "fret": 3,
+      "finger": 2
     }
   }
 ]
