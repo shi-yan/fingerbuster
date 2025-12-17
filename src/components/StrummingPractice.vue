@@ -68,7 +68,12 @@
     <div v-if="metronome.isPlaying.value && currentPattern" class="timeline-container">
       <div class="timeline-header">
         <div class="beat-indicator">
-          Bar {{ metronome.currentBar.value + 1 }} | Beat {{ metronome.currentBeat.value + 1 }}
+          <span v-if="isInCountdown" class="countdown-indicator">
+            Countdown: {{ countdownBeatsRemaining }}
+          </span>
+          <span v-else>
+            Bar {{ metronome.currentBar.value + 1 }} | Beat {{ metronome.currentBeat.value + 1 }}
+          </span>
         </div>
       </div>
 
@@ -188,6 +193,10 @@ const currentStrumIndex = ref(0)
 const currentStrumFeedback = ref<StrumValidationResult | null>(null)
 const expectedDirection = ref<'down' | 'up' | null>(null)
 
+// Timing synchronization
+const metronomeStartTime = ref<number>(0) // When metronome started (performance.now())
+const COUNTDOWN_BEATS = 4 // 1 bar countdown before first strum
+
 // Scoring
 const successfulStrums = ref(0)
 const totalAttempts = ref(0)
@@ -206,15 +215,31 @@ const playheadPosition = computed(() => {
   return 50
 })
 
+// Countdown tracking
+const isInCountdown = computed(() => {
+  const currentTime = metronome.elapsedTime.value
+  const countdownDuration = COUNTDOWN_BEATS * metronome.beatDuration.value
+  return currentTime < countdownDuration
+})
+
+const countdownBeatsRemaining = computed(() => {
+  const currentTime = metronome.elapsedTime.value
+  const beatDuration = metronome.beatDuration.value
+  const beatsElapsed = Math.floor(currentTime / beatDuration)
+  return Math.max(0, COUNTDOWN_BEATS - beatsElapsed)
+})
+
 // Get visible strums (centered around current time)
 const visibleStrums = computed<StrumSlot[]>(() => {
   if (!currentPattern.value || !metronome.isPlaying.value) return []
 
   const currentTime = metronome.elapsedTime.value
   const windowDuration = TIMELINE_WINDOW_BEATS * metronome.beatDuration.value
+  const countdownOffset = COUNTDOWN_BEATS * metronome.beatDuration.value
 
   return strumSlots.value.map(slot => {
-    const strumTime = metronome.getStrumTime(slot.instruction.beat, slot.instruction.subdivision)
+    // Add countdown offset to strum time
+    const strumTime = metronome.getStrumTime(slot.instruction.beat, slot.instruction.subdivision) + countdownOffset
     const offset = strumTime - currentTime
 
     // Position relative to window (0-100%)
@@ -276,6 +301,9 @@ function startPractice() {
   strumDetector.clearBuffer()
   successfulStrums.value = 0
   totalAttempts.value = 0
+
+  // Capture the start time before starting metronome
+  metronomeStartTime.value = performance.now()
   metronome.start()
 }
 
@@ -295,10 +323,12 @@ function resetPractice() {
 }
 
 // MIDI event handler
-function handleMidiPluck(guitarString: number, timestamp: number) {
+function handleMidiPluck(guitarString: number, absoluteTimestamp: number) {
   if (!metronome.isPlaying.value || !currentPattern.value) return
 
-  strumDetector.addEvent({ string: guitarString, timestamp })
+  // Convert absolute timestamp to relative time (relative to metronome start)
+  const relativeTimestamp = absoluteTimestamp - metronomeStartTime.value
+  strumDetector.addEvent({ string: guitarString, timestamp: relativeTimestamp })
 }
 
 // Main update loop
@@ -308,16 +338,18 @@ function updateLoop() {
   if (!metronome.isPlaying.value || !currentPattern.value) return
 
   const currentTime = metronome.elapsedTime.value
+  const countdownOffset = COUNTDOWN_BEATS * metronome.beatDuration.value
 
   // Check for current strum
   if (currentStrumIndex.value < strumSlots.value.length) {
     const currentSlot = strumSlots.value[currentStrumIndex.value]
     if (!currentSlot) return
 
+    // Add countdown offset to expected time
     const expectedTime = metronome.getStrumTime(
       currentSlot.instruction.beat,
       currentSlot.instruction.subdivision
-    )
+    ) + countdownOffset
 
     // If we're in the timing window
     if (Math.abs(currentTime - expectedTime) <= WINDOW_TOLERANCE_MS) {
@@ -366,6 +398,20 @@ function updateLoop() {
         expectedDirection.value = nextSlot.instruction.direction
       }
       strumDetector.clearBuffer()
+    }
+  } else {
+    // Pattern completed - loop back to beginning
+    if (currentPattern.value) {
+      // Reset all strum results for the new loop
+      strumSlots.value.forEach(slot => {
+        slot.result = undefined
+      })
+      currentStrumIndex.value = 0
+      currentStrumFeedback.value = null
+      const firstSlot = strumSlots.value[0]
+      if (firstSlot) {
+        expectedDirection.value = firstSlot.instruction.direction
+      }
     }
   }
 }
@@ -559,6 +605,16 @@ button:disabled {
   font-size: 20px;
   font-weight: bold;
   color: #333;
+}
+
+.countdown-indicator {
+  color: #e67e22;
+  animation: pulse-countdown 1s ease-in-out infinite;
+}
+
+@keyframes pulse-countdown {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
 }
 
 .timeline {
