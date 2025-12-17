@@ -139,13 +139,38 @@
     </div>
 
     <!-- Debug Info (can be hidden in production) -->
-    <details class="debug-panel">
+    <details class="debug-panel" open>
       <summary>Debug Info</summary>
       <div class="debug-content">
+        <p><strong>Timing:</strong></p>
         <p>Current Time: {{ Math.round(metronome.elapsedTime.value) }}ms</p>
         <p>Beat Duration: {{ Math.round(metronome.beatDuration.value) }}ms</p>
+        <p>Countdown Offset: {{ COUNTDOWN_BEATS * metronome.beatDuration.value }}ms</p>
+        <p>Metronome Start: {{ Math.round(metronomeStartTime) }}ms</p>
+
+        <p><strong>Events:</strong></p>
         <p>Events in Buffer: {{ strumDetector.eventBuffer.value.length }}</p>
-        <p>Last Event: {{ strumDetector.lastEventTime.value }}ms</p>
+        <p>Last Event Time: {{ Math.round(strumDetector.lastEventTime.value) }}ms</p>
+
+        <p><strong>Recent Events (last 10):</strong></p>
+        <div class="event-log">
+          <div v-for="(event, i) in recentEvents" :key="i" class="event-item">
+            String {{ event.string }} @ {{ Math.round(event.timestamp) }}ms
+          </div>
+        </div>
+
+        <p><strong>Current Strum Index:</strong> {{ currentStrumIndex }}</p>
+        <p><strong>Expected Direction:</strong> {{ expectedDirection || 'N/A' }}</p>
+
+        <div v-if="lastDetectionResult" class="detection-result">
+          <p><strong>Last Detection:</strong></p>
+          <p>Direction: {{ lastDetectionResult.direction }}</p>
+          <p>Confidence: {{ (lastDetectionResult.confidence * 100).toFixed(0) }}%</p>
+          <p>Strings Played: {{ Array.from(lastDetectionResult.stringsPlayed).join(', ') }}</p>
+          <p>Wrong Strings: {{ lastDetectionResult.wrongStrings.join(', ') || 'None' }}</p>
+          <p>Missed Strings: {{ lastDetectionResult.missedStrings.join(', ') || 'None' }}</p>
+          <p>Valid: {{ lastDetectionResult.valid ? '✓' : '✗' }}</p>
+        </div>
       </div>
     </details>
   </div>
@@ -196,6 +221,12 @@ const expectedDirection = ref<'down' | 'up' | null>(null)
 // Timing synchronization
 const metronomeStartTime = ref<number>(0) // When metronome started (performance.now())
 const COUNTDOWN_BEATS = 4 // 1 bar countdown before first strum
+
+// Debug tracking
+const lastDetectionResult = ref<StrumValidationResult | null>(null)
+const recentEvents = computed(() => {
+  return strumDetector.eventBuffer.value.slice(-10).reverse()
+})
 
 // Scoring
 const successfulStrums = ref(0)
@@ -328,6 +359,9 @@ function handleMidiPluck(guitarString: number, absoluteTimestamp: number) {
 
   // Convert absolute timestamp to relative time (relative to metronome start)
   const relativeTimestamp = absoluteTimestamp - metronomeStartTime.value
+
+  console.log(`🎵 MIDI Event: String ${guitarString}, Absolute: ${Math.round(absoluteTimestamp)}ms, Relative: ${Math.round(relativeTimestamp)}ms, Current Time: ${Math.round(metronome.elapsedTime.value)}ms`)
+
   strumDetector.addEvent({ string: guitarString, timestamp: relativeTimestamp })
 }
 
@@ -362,8 +396,23 @@ function updateLoop() {
         // Validate the strum
         const result = strumDetector.validateStrum(events, currentSlot.instruction)
 
+        // Store for debugging
+        lastDetectionResult.value = result
         currentSlot.result = result
         currentStrumFeedback.value = result
+
+        console.log('🎸 Strum Detection:', {
+          expectedDirection: currentSlot.instruction.direction,
+          detectedDirection: result.direction,
+          confidence: result.confidence,
+          stringsPlayed: Array.from(result.stringsPlayed),
+          expectedStrings: currentSlot.instruction.strings,
+          wrongStrings: result.wrongStrings,
+          missedStrings: result.missedStrings,
+          valid: result.valid,
+          eventCount: events.length,
+          events: events.map(e => `String ${e.string} @ ${Math.round(e.timestamp)}ms`)
+        })
 
         if (result.valid) {
           successfulStrums.value++
@@ -780,5 +829,39 @@ button:disabled {
 
 .debug-content p {
   margin: 5px 0;
+}
+
+.event-log {
+  max-height: 150px;
+  overflow-y: auto;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  padding: 5px;
+  margin: 5px 0;
+  font-family: monospace;
+  font-size: 11px;
+}
+
+.event-item {
+  padding: 2px 5px;
+  border-bottom: 1px solid #eee;
+}
+
+.event-item:last-child {
+  border-bottom: none;
+}
+
+.detection-result {
+  background: #e8f4f8;
+  border: 1px solid #b3d9e6;
+  border-radius: 3px;
+  padding: 10px;
+  margin-top: 10px;
+}
+
+.detection-result p {
+  margin: 3px 0;
+  font-size: 12px;
 }
 </style>

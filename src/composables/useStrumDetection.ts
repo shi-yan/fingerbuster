@@ -30,7 +30,10 @@ export function useStrumDetection() {
 
   // Detect strum direction using majority vote
   function detectDirection(events: StrumEvent[]): 'down' | 'up' | 'unclear' {
-    if (events.length < 2) return 'unclear'
+    if (events.length < 2) {
+      console.log('🔍 Detection: Too few events (<2)')
+      return 'unclear'
+    }
 
     // Sort by timestamp
     const sorted = [...events].sort((a, b) => a.timestamp - b.timestamp)
@@ -45,7 +48,12 @@ export function useStrumDetection() {
       }
     }
 
-    if (deduplicated.length < 2) return 'unclear'
+    console.log('🔍 Detection: Deduplicated strings:', deduplicated.map(e => e.string).join('→'))
+
+    if (deduplicated.length < 2) {
+      console.log('🔍 Detection: Too few unique strings after dedup')
+      return 'unclear'
+    }
 
     // Count transitions
     let downCount = 0 // High to low (6→5→4)
@@ -53,20 +61,40 @@ export function useStrumDetection() {
 
     for (let i = 0; i < deduplicated.length - 1; i++) {
       const diff = deduplicated[i]!.string - deduplicated[i + 1]!.string
-      if (diff > 0) downCount++      // Going from higher string number to lower
-      else if (diff < 0) upCount++   // Going from lower string number to higher
+      if (diff > 0) {
+        downCount++
+        console.log(`  ${deduplicated[i]!.string}→${deduplicated[i + 1]!.string}: DOWN`)
+      } else if (diff < 0) {
+        upCount++
+        console.log(`  ${deduplicated[i]!.string}→${deduplicated[i + 1]!.string}: UP`)
+      }
     }
 
+    console.log(`🔍 Detection: Vote count - Down: ${downCount}, Up: ${upCount}`)
+
     // Majority vote
-    if (downCount > upCount) return 'down'
-    if (upCount > downCount) return 'up'
+    if (downCount > upCount) {
+      console.log('🔍 Detection: Result = DOWN (majority)')
+      return 'down'
+    }
+    if (upCount > downCount) {
+      console.log('🔍 Detection: Result = UP (majority)')
+      return 'up'
+    }
 
     // Fallback: first-to-last comparison
     const first = deduplicated[0]!.string
     const last = deduplicated[deduplicated.length - 1]!.string
-    if (first > last) return 'down'
-    if (first < last) return 'up'
+    if (first > last) {
+      console.log(`🔍 Detection: Result = DOWN (first ${first} > last ${last})`)
+      return 'down'
+    }
+    if (first < last) {
+      console.log(`🔍 Detection: Result = UP (first ${first} < last ${last})`)
+      return 'up'
+    }
 
+    console.log('🔍 Detection: Result = UNCLEAR')
     return 'unclear'
   }
 
