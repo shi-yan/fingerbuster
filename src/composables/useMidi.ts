@@ -33,6 +33,21 @@ export function useMidi() {
   const isSupported = ref(false)
   const isConnected = ref(false)
 
+  // Callback for individual note events (for strumming detection)
+  type NoteOnCallback = (guitarString: number, timestamp: number) => void
+  const noteOnCallbacks = ref<NoteOnCallback[]>([])
+
+  function onNoteOn(callback: NoteOnCallback) {
+    noteOnCallbacks.value.push(callback)
+  }
+
+  function offNoteOn(callback: NoteOnCallback) {
+    const index = noteOnCallbacks.value.indexOf(callback)
+    if (index > -1) {
+      noteOnCallbacks.value.splice(index, 1)
+    }
+  }
+
   // Auto-clear timer for plucked strings
   let autoClearTimer: number | null = null
   const AUTO_CLEAR_DELAY = 1000 // 1 second
@@ -90,7 +105,13 @@ export function useMidi() {
           // Channel 1 = 6th string, Channel 2 = 5th string, ..., Channel 6 = 1st string
           if (channel >= 1 && channel <= 6) {
             const guitarString = 7 - channel // Convert MIDI channel to guitar string (1-6)
+            const timestamp = performance.now()
             console.log(`🎵 Note ON - MIDI Channel ${channel} → Guitar String ${guitarString}, Note ${data1}`)
+
+            // Trigger callbacks for strumming detection (with individual timestamps)
+            noteOnCallbacks.value.forEach(callback => {
+              callback(guitarString, timestamp)
+            })
 
             // Add to set and trigger reactivity by creating new Set
             const newSet = new Set(stringsPlucked.value)
@@ -350,7 +371,9 @@ export function useMidi() {
     disconnect,
     clearStringsPlucked,
     clearMessages,
-    checkSupport
+    checkSupport,
+    onNoteOn,
+    offNoteOn
   }
 }
 
