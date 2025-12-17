@@ -238,7 +238,7 @@ const accuracyPercentage = computed(() => {
 
 // Timeline window (show 8 beats worth)
 const TIMELINE_WINDOW_BEATS = 8
-const WINDOW_TOLERANCE_MS = 200 // Tolerance for strum timing
+const WINDOW_TOLERANCE_MS = 500 // Tolerance for strum timing (500ms = half a beat at 60 BPM)
 
 // Calculate playhead position (0-100%)
 const playheadPosition = computed(() => {
