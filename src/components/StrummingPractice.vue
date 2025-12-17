@@ -177,7 +177,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { sharedMidi } from '../composables/useMidi'
 import { useMetronome } from '../composables/useMetronome'
 import { useStrumDetection } from '../composables/useStrumDetection'
@@ -467,19 +467,8 @@ function updateLoop() {
 
 // Setup MIDI listeners
 onMounted(() => {
-  // Listen to MIDI pluck events
-  const { stringsPlucked } = sharedMidi
-
-  watch(
-    stringsPlucked,
-    (newStrings) => {
-      const timestamp = performance.now()
-      newStrings.forEach(string => {
-        handleMidiPluck(string, timestamp)
-      })
-    },
-    { deep: true }
-  )
+  // Register callback for individual Note ON events
+  sharedMidi.onNoteOn(handleMidiPluck)
 
   // Start update loop
   updateIntervalId = window.setInterval(updateLoop, 16) // ~60 FPS
@@ -489,6 +478,9 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  // Unregister callback
+  sharedMidi.offNoteOn(handleMidiPluck)
+
   if (updateIntervalId !== null) {
     clearInterval(updateIntervalId)
   }
