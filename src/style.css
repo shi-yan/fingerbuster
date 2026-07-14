@@ -105,3 +105,10 @@ button.btn-danger:hover:not(:disabled) {
 .scrollable::-webkit-scrollbar-thumb:hover {
   background: #555;
 }
+
+@media print {
+  #app {
+    height: auto;
+    overflow: visible;
+  }
+}

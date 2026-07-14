@@ -37,6 +37,7 @@
         <PluckingPractice v-else-if="currentView === 'plucking-practice'" />
         <ArpeggioPicking v-else-if="currentView === 'arpeggio-picking'" />
         <StrummingPractice v-else-if="currentView === 'strumming-practice'" />
+        <FretboardScaleEditor v-else-if="currentView === 'scale-editor'" />
         <ProgressChart v-else-if="currentView === 'progress-chart'" />
       </div>
     </div>
@@ -51,9 +52,10 @@ import PracticeMode from './components/PracticeMode.vue'
 import PluckingPractice from './components/PluckingPractice.vue'
 import ArpeggioPicking from './components/ArpeggioPicking.vue'
 import StrummingPractice from './components/StrummingPractice.vue'
+import FretboardScaleEditor from './components/FretboardScaleEditor.vue'
 import ProgressChart from './components/ProgressChart.vue'
 
-type ViewId = 'connection' | 'chord-practice' | 'practice-mode' | 'plucking-practice' | 'arpeggio-picking' | 'strumming-practice' | 'progress-chart'
+type ViewId = 'connection' | 'chord-practice' | 'practice-mode' | 'plucking-practice' | 'arpeggio-picking' | 'strumming-practice' | 'scale-editor' | 'progress-chart'
 
 interface MenuItem {
   id: ViewId
@@ -98,6 +100,12 @@ const menuItems: MenuItem[] = [
     label: 'Strumming Practice',
     description: 'Rhythm and strumming patterns',
     icon: '🎶'
+  },
+  {
+    id: 'scale-editor',
+    label: 'Scale Editor',
+    description: 'Draw and save fretboard scale shapes',
+    icon: '📝'
   },
   {
     id: 'progress-chart',
@@ -209,5 +217,24 @@ const currentView = ref<ViewId>('connection')
 
 .content-wrapper {
   padding: 2rem;
+}
+
+@media print {
+  .sidebar {
+    display: none !important;
+  }
+
+  .app-container {
+    height: auto;
+    background-color: #fff;
+  }
+
+  .main-content {
+    overflow: visible;
+  }
+
+  .content-wrapper {
+    padding: 0;
+  }
 }
 </style>
