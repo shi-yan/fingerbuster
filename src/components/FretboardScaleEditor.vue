@@ -2,7 +2,8 @@
   <div class="scale-editor-container card">
     <div class="header-section no-print">
       <h2>Fretboard Scale Editor</h2>
-      <p class="subtitle">Click a fret to mark a note. Build your own scale shapes or start from a CAGED preset.</p>
+      <p class="subtitle">Left-click a fret to mark it and hear the note. Right-click a marked fret to remove it.</p>
+      <p v-if="guitarSampler.isLoading.value" class="loading-note">Loading guitar sounds...</p>
     </div>
 
     <!-- Controls -->
@@ -91,13 +92,14 @@
 
         <!-- String rows -->
         <template v-for="string in 6" :key="`row-${string}`">
-          <div class="string-head">{{ stringNames[string - 1] }}</div>
+          <div class="string-head">{{ getNoteLabel(string, 0, capo) }}</div>
           <div
             v-for="fret in fretNumbers"
             :key="`cell-${string}-${fret}`"
             class="fret-cell"
             :class="{ 'fret-cell-nut': fret === 0, 'fret-cell-inlay': inlayFrets.includes(fret) }"
-            @click="toggleNote(string, fret)"
+            @click="handleLeftClick(string, fret)"
+            @contextmenu.prevent="handleRightClick(string, fret)"
           >
             <div v-if="fret !== 0" class="fret-wire"></div>
             <div class="string-wire"></div>
@@ -121,6 +123,7 @@ import { ref, computed, onMounted } from 'vue'
 import { getNoteLabel as computeNoteLabel } from '../utils/noteNames'
 import { cagedCMajorPresets, type ScalePreset, type ScalePosition } from '../data/scaleEditorPresets'
 import { saveScale, getAllSavedScales, deleteScale, type SavedScale } from '../db/practiceDb'
+import { useGuitarSampler } from '../composables/useGuitarSampler'
 
 const LOCAL_STORAGE_KEY = 'fingerbuster-scale-saves'
 const FRET_COUNT = 15 // frets 0 (open/capo) through 15
@@ -132,10 +135,9 @@ interface LocalScaleSave {
   updatedAt: number
 }
 
-// String names, index 0 = string 1 (high e)
-const stringNames = ['e', 'B', 'G', 'D', 'A', 'E']
-
 const presets: ScalePreset[] = cagedCMajorPresets
+
+const guitarSampler = useGuitarSampler()
 
 const fretNumbers = computed(() => Array.from({ length: FRET_COUNT + 1 }, (_, i) => i))
 
@@ -155,19 +157,48 @@ const isMarked = (string: number, fret: number): boolean => {
   return markedPositions.value.has(keyFor(string, fret))
 }
 
-const toggleNote = (string: number, fret: number) => {
-  const next = new Set(markedPositions.value)
+const markNote = (string: number, fret: number) => {
   const key = keyFor(string, fret)
-  if (next.has(key)) {
-    next.delete(key)
-  } else {
-    next.add(key)
-  }
+  if (markedPositions.value.has(key)) return
+  const next = new Set(markedPositions.value)
+  next.add(key)
+  markedPositions.value = next
+}
+
+const unmarkNote = (string: number, fret: number) => {
+  const key = keyFor(string, fret)
+  if (!markedPositions.value.has(key)) return
+  const next = new Set(markedPositions.value)
+  next.delete(key)
   markedPositions.value = next
 }
 
 const getNoteLabel = (string: number, fret: number, capoValue: number): string => {
   return computeNoteLabel(string, fret, capoValue)
+}
+
+const ensureAudioReady = async (): Promise<void> => {
+  await guitarSampler.startAudio()
+  if (!guitarSampler.isLoaded.value) {
+    await guitarSampler.initializeSampler()
+  }
+}
+
+const handleLeftClick = async (string: number, fret: number) => {
+  markNote(string, fret)
+  try {
+    await ensureAudioReady()
+    // The sampler's own tuning table doesn't know about the capo, but a
+    // capo'd note at `fret` sounds the same as an uncapo'd note at
+    // `fret + capo`, so shift the fret to reuse it.
+    guitarSampler.playString(string, fret + capo.value)
+  } catch (error) {
+    console.error('Failed to play note:', error)
+  }
+}
+
+const handleRightClick = (string: number, fret: number) => {
+  unmarkNote(string, fret)
 }
 
 const clearNotes = () => {
@@ -332,6 +363,13 @@ const printFretboard = () => {
   margin-top: 0.25rem;
 }
 
+.loading-note {
+  color: #ca8a04;
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+  font-style: italic;
+}
+
 .controls {
   display: flex;
   flex-wrap: wrap;
@@ -436,6 +474,7 @@ const printFretboard = () => {
   display: flex;
   align-items: center;
   justify-content: center;
+  font-size: 0.85rem;
   font-weight: 700;
   color: #000;
   border-right: 2px solid #000;
