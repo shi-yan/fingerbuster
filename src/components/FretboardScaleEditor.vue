@@ -85,26 +85,42 @@
           v-for="fret in fretNumbers"
           :key="`head-${fret}`"
           class="fret-head"
-          :class="{ 'fret-head-inlay': inlayFrets.includes(fret) }"
+          :class="{ 'fret-head-inlay': inlayFrets.includes(fret), 'fret-head-blocked': isBlocked(fret), 'fret-head-capo': fret === capo }"
         >
           {{ fret }}
         </div>
 
         <!-- String rows -->
         <template v-for="string in 6" :key="`row-${string}`">
-          <div class="string-head">{{ getNoteLabel(string, 0, capo) }}</div>
+          <!-- Open string (nut) label, doubles as a togglable "fret 0" -->
+          <div
+            class="string-head"
+            :class="{ 'string-head-blocked': isBlocked(0) }"
+            @click="handleLeftClick(string, 0)"
+            @contextmenu.prevent="handleRightClick(string, 0)"
+          >
+            <div v-if="isMarked(string, 0) && !isBlocked(0)" class="note-marker header-marker">
+              {{ getNoteLabel(string, 0) }}
+            </div>
+            <span v-else>{{ getNoteLabel(string, 0) }}</span>
+          </div>
           <div
             v-for="fret in fretNumbers"
             :key="`cell-${string}-${fret}`"
             class="fret-cell"
-            :class="{ 'fret-cell-nut': fret === 0, 'fret-cell-inlay': inlayFrets.includes(fret) }"
+            :class="{
+              'fret-cell-nut': fret === 1,
+              'fret-cell-inlay': inlayFrets.includes(fret),
+              'fret-cell-blocked': isBlocked(fret),
+              'fret-cell-capo': fret === capo
+            }"
             @click="handleLeftClick(string, fret)"
             @contextmenu.prevent="handleRightClick(string, fret)"
           >
-            <div v-if="fret !== 0" class="fret-wire"></div>
+            <div class="fret-wire"></div>
             <div class="string-wire"></div>
             <div v-if="isMarked(string, fret)" class="note-marker">
-              {{ getNoteLabel(string, fret, capo) }}
+              {{ getNoteLabel(string, fret) }}
             </div>
           </div>
         </template>
@@ -113,7 +129,7 @@
 
     <div class="legend no-print">
       <span>{{ markedCount }} note{{ markedCount === 1 ? '' : 's' }} marked</span>
-      <span v-if="capo > 0" class="capo-note">Capo at fret {{ capo }} &mdash; labels show the actual sounding pitch.</span>
+      <span v-if="capo > 0" class="capo-note">Capo at fret {{ capo }} &mdash; frets before it are muted and can't be played.</span>
     </div>
   </div>
 </template>
@@ -126,7 +142,7 @@ import { saveScale, getAllSavedScales, deleteScale, type SavedScale } from '../d
 import { useGuitarSampler } from '../composables/useGuitarSampler'
 
 const LOCAL_STORAGE_KEY = 'fingerbuster-scale-saves'
-const FRET_COUNT = 15 // frets 0 (open/capo) through 15
+const FRET_COUNT = 15 // frets 1 through 15; the open string is its own header cell
 const inlayFrets = [3, 5, 7, 9, 12, 15]
 
 interface LocalScaleSave {
@@ -139,15 +155,24 @@ const presets: ScalePreset[] = cagedCMajorPresets
 
 const guitarSampler = useGuitarSampler()
 
-const fretNumbers = computed(() => Array.from({ length: FRET_COUNT + 1 }, (_, i) => i))
+const fretNumbers = computed(() => Array.from({ length: FRET_COUNT }, (_, i) => i + 1))
 
 const gridStyle = computed(() => ({
-  gridTemplateColumns: `56px repeat(${FRET_COUNT + 1}, 48px)`
+  gridTemplateColumns: `56px repeat(${FRET_COUNT}, 48px)`
 }))
 
-// Marked notes, keyed as "string-fret"
+// Marked notes, keyed as "string-fret" (fret 0 = open string)
 const markedPositions = ref<Set<string>>(new Set())
 const capo = ref(0)
+
+// A capo mutes the true open string and everything behind it, so those
+// positions can't be played: fret 0 is blocked whenever a capo is on, and
+// frets 1..(capo-1) are blocked because the capo is already fretting there.
+const isBlocked = (fret: number): boolean => {
+  if (capo.value <= 0) return false
+  if (fret === 0) return true
+  return fret < capo.value
+}
 
 const markedCount = computed(() => markedPositions.value.size)
 
@@ -173,8 +198,10 @@ const unmarkNote = (string: number, fret: number) => {
   markedPositions.value = next
 }
 
-const getNoteLabel = (string: number, fret: number, capoValue: number): string => {
-  return computeNoteLabel(string, fret, capoValue)
+// A fretted note's pitch only depends on the actual fret pressed, never the
+// capo (the capo just makes frets below it unreachable, handled by isBlocked).
+const getNoteLabel = (string: number, fret: number): string => {
+  return computeNoteLabel(string, fret)
 }
 
 const ensureAudioReady = async (): Promise<void> => {
@@ -185,19 +212,19 @@ const ensureAudioReady = async (): Promise<void> => {
 }
 
 const handleLeftClick = async (string: number, fret: number) => {
+  if (isBlocked(fret)) return
   markNote(string, fret)
   try {
     await ensureAudioReady()
-    // The sampler's own tuning table doesn't know about the capo, but a
-    // capo'd note at `fret` sounds the same as an uncapo'd note at
-    // `fret + capo`, so shift the fret to reuse it.
-    guitarSampler.playString(string, fret + capo.value)
+    guitarSampler.playString(string, fret)
   } catch (error) {
     console.error('Failed to play note:', error)
   }
 }
 
 const handleRightClick = (string: number, fret: number) => {
+  // Always allow removing a mark, even one left behind in a now-blocked
+  // region (e.g. after raising the capo), so it's never stuck.
   unmarkNote(string, fret)
 }
 
@@ -470,7 +497,17 @@ const printFretboard = () => {
   background-color: #f3f4f6;
 }
 
+.fret-head-blocked {
+  background-color: #d1d5db;
+  color: #6b7280;
+}
+
+.fret-head-capo {
+  border-left: 4px solid #dc2626;
+}
+
 .string-head {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -479,6 +516,21 @@ const printFretboard = () => {
   color: #000;
   border-right: 2px solid #000;
   background-color: #f9fafb;
+  cursor: pointer;
+}
+
+.string-head:hover {
+  background-color: #e5e7eb;
+}
+
+.string-head-blocked {
+  cursor: not-allowed;
+  color: #9ca3af;
+  background-color: #e5e7eb;
+}
+
+.string-head-blocked:hover {
+  background-color: #e5e7eb;
 }
 
 .fret-cell {
@@ -494,6 +546,19 @@ const printFretboard = () => {
 
 .fret-cell-nut {
   border-left: 3px solid #000;
+}
+
+.fret-cell-capo {
+  border-left: 4px solid #dc2626;
+}
+
+.fret-cell-blocked {
+  background-color: #d1d5db;
+  cursor: not-allowed;
+}
+
+.fret-cell-blocked:hover {
+  background-color: #d1d5db;
 }
 
 .fret-cell:hover {
@@ -534,6 +599,15 @@ const printFretboard = () => {
   z-index: 2;
 }
 
+.header-marker {
+  inset: auto;
+  top: 50%;
+  left: 50%;
+  width: 38px;
+  height: 38px;
+  transform: translate(-50%, -50%);
+}
+
 .legend {
   display: flex;
   justify-content: space-between;
@@ -568,9 +642,17 @@ const printFretboard = () => {
   .string-head,
   .fret-cell,
   .fret-cell-inlay,
-  .fret-head-inlay {
+  .fret-head-inlay,
+  .fret-cell-blocked,
+  .fret-head-blocked,
+  .string-head-blocked {
     background-color: #fff !important;
     color: #000 !important;
+  }
+
+  .fret-cell-capo,
+  .fret-head-capo {
+    border-left-color: #000 !important;
   }
 }
 </style>
