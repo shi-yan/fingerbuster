@@ -119,7 +119,11 @@
           >
             <div class="fret-wire"></div>
             <div class="string-wire"></div>
-            <div v-if="isMarked(string, fret)" class="note-marker">
+            <div
+              v-if="isMarked(string, fret) || isCapoNote(fret)"
+              class="note-marker"
+              :class="{ 'note-marker-capo': isCapoNote(fret) }"
+            >
               {{ getNoteLabel(string, fret) }}
             </div>
           </div>
@@ -174,6 +178,13 @@ const isBlocked = (fret: number): boolean => {
   return fret < capo.value
 }
 
+// The fret the capo sits on acts as the new "open" position for every
+// string, so it's always considered part of the shape: shown automatically
+// and never removable, same as the open string is when there's no capo.
+const isCapoNote = (fret: number): boolean => {
+  return capo.value > 0 && fret === capo.value
+}
+
 const markedCount = computed(() => markedPositions.value.size)
 
 const keyFor = (string: number, fret: number) => `${string}-${fret}`
@@ -213,7 +224,11 @@ const ensureAudioReady = async (): Promise<void> => {
 
 const handleLeftClick = async (string: number, fret: number) => {
   if (isBlocked(fret)) return
-  markNote(string, fret)
+  // The capo's own fret is auto-marked already; don't also add it as a
+  // regular (removable) mark.
+  if (!isCapoNote(fret)) {
+    markNote(string, fret)
+  }
   try {
     await ensureAudioReady()
     guitarSampler.playString(string, fret)
@@ -223,8 +238,10 @@ const handleLeftClick = async (string: number, fret: number) => {
 }
 
 const handleRightClick = (string: number, fret: number) => {
-  // Always allow removing a mark, even one left behind in a now-blocked
-  // region (e.g. after raising the capo), so it's never stuck.
+  // The capo's fret can't be removed - it's always the effective open note.
+  if (isCapoNote(fret)) return
+  // Otherwise always allow removing a mark, even one left behind in a
+  // now-blocked region (e.g. after raising the capo), so it's never stuck.
   unmarkNote(string, fret)
 }
 
@@ -503,7 +520,18 @@ const printFretboard = () => {
 }
 
 .fret-head-capo {
-  border-left: 4px solid #dc2626;
+  position: relative;
+}
+
+.fret-head-capo::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 3px;
+  background-color: #dc2626;
+  transform: translateX(-50%);
 }
 
 .string-head {
@@ -548,8 +576,16 @@ const printFretboard = () => {
   border-left: 3px solid #000;
 }
 
-.fret-cell-capo {
-  border-left: 4px solid #dc2626;
+.fret-cell-capo::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 3px;
+  background-color: #dc2626;
+  transform: translateX(-50%);
+  z-index: 1;
 }
 
 .fret-cell-blocked {
@@ -608,6 +644,10 @@ const printFretboard = () => {
   transform: translate(-50%, -50%);
 }
 
+.note-marker-capo {
+  border-color: #dc2626;
+}
+
 .legend {
   display: flex;
   justify-content: space-between;
@@ -650,9 +690,13 @@ const printFretboard = () => {
     color: #000 !important;
   }
 
-  .fret-cell-capo,
-  .fret-head-capo {
-    border-left-color: #000 !important;
+  .fret-cell-capo::before,
+  .fret-head-capo::after {
+    background-color: #000 !important;
+  }
+
+  .note-marker-capo {
+    border-color: #000 !important;
   }
 }
 </style>
