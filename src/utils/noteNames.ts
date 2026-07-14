@@ -13,10 +13,10 @@ export const OPEN_STRING_MIDI: Record<number, number> = {
 }
 
 /**
- * A capo shifts the effective "open" pitch of every fretted note up by its
- * fret count, since the fretted position closest to the bridge determines
- * the vibrating length. For a scale/practice editor, frets are entered
- * relative to the capo, so capo semitones are simply added to the note.
+ * `fret` is always an absolute fret position (0 = open string). `capo` is an
+ * optional flat semitone offset for callers that want capo-relative fret
+ * numbering; callers that treat frets as physical positions (where a capo
+ * only makes lower frets unreachable, not transposed) should leave it at 0.
  */
 export function getMidiNote(stringNumber: number, fret: number, capo: number = 0): number {
   const open = OPEN_STRING_MIDI[stringNumber]
