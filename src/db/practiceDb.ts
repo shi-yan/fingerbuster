@@ -28,10 +28,24 @@ export interface SavedProgression {
   createdAt: number // Timestamp
 }
 
+export interface ScalePositionRecord {
+  string: number // 1-6, 1 = high e
+  fret: number
+}
+
+export interface SavedScale {
+  id?: number // Auto-incremented ID
+  name: string // User-defined name
+  capo: number // Capo fret position
+  positions: ScalePositionRecord[] // Marked fretboard notes
+  createdAt: number // Timestamp
+}
+
 export class PracticeDatabase extends Dexie {
   dailyProgress!: Table<DailyProgress>
   dailyPluckingProgress!: Table<DailyPluckingProgress>
   savedProgressions!: Table<SavedProgression>
+  savedScales!: Table<SavedScale>
 
   constructor() {
     super('PracticeDatabase')
@@ -46,6 +60,12 @@ export class PracticeDatabase extends Dexie {
       dailyProgress: 'dateId',
       dailyPluckingProgress: 'dateId',
       savedProgressions: '++id, name'
+    })
+    this.version(4).stores({
+      dailyProgress: 'dateId',
+      dailyPluckingProgress: 'dateId',
+      savedProgressions: '++id, name',
+      savedScales: '++id, name'
     })
   }
 }
@@ -148,4 +168,37 @@ export async function getAllSavedProgressions(): Promise<SavedProgression[]> {
 // Helper function to delete a saved progression
 export async function deleteProgression(id: number): Promise<void> {
   await db.savedProgressions.delete(id)
+}
+
+// Helper function to save a custom fretboard scale
+export async function saveScale(name: string, capo: number, positions: ScalePositionRecord[]): Promise<number> {
+  const existing = await db.savedScales.where('name').equals(name).first()
+
+  if (existing) {
+    // Update existing scale
+    await db.savedScales.update(existing.id!, {
+      capo,
+      positions,
+      createdAt: Date.now()
+    })
+    return existing.id!
+  } else {
+    // Create new scale
+    return await db.savedScales.add({
+      name,
+      capo,
+      positions,
+      createdAt: Date.now()
+    })
+  }
+}
+
+// Helper function to get all saved scales
+export async function getAllSavedScales(): Promise<SavedScale[]> {
+  return await db.savedScales.toArray()
+}
+
+// Helper function to delete a saved scale
+export async function deleteScale(id: number): Promise<void> {
+  await db.savedScales.delete(id)
 }
