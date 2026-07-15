@@ -202,3 +202,8 @@ export async function getAllSavedScales(): Promise<SavedScale[]> {
 export async function deleteScale(id: number): Promise<void> {
   await db.savedScales.delete(id)
 }
+
+// Helper function to rename a saved scale
+export async function renameScale(id: number, name: string): Promise<void> {
+  await db.savedScales.update(id, { name })
+}

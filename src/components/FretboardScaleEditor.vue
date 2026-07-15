@@ -26,29 +26,16 @@
               {{ preset.name }}
             </option>
           </optgroup>
-          <optgroup v-if="localSaveNames.length > 0" label="Local Storage">
-            <option v-for="name in localSaveNames" :key="name" :value="`local:${name}`">
-              {{ name }}
-            </option>
-          </optgroup>
-          <optgroup v-if="dbSaves.length > 0" label="IndexedDB">
+          <optgroup v-if="dbSaves.length > 0" label="My Saved Shapes">
             <option v-for="save in dbSaves" :key="save.id" :value="`db:${save.id}`">
               {{ save.name }}
             </option>
           </optgroup>
         </select>
-        <button
-          v-if="canDeleteSelected"
-          class="btn-danger btn-small"
-          @click="deleteSelected"
-          title="Delete this save"
-        >
-          Delete
-        </button>
       </div>
 
       <div class="control-group grow">
-        <label for="save-name">Save As</label>
+        <label for="save-name">Name</label>
         <input
           id="save-name"
           v-model="saveName"
@@ -59,11 +46,18 @@
       </div>
 
       <div class="control-group buttons">
-        <button class="btn-primary btn-small" :disabled="!saveName.trim()" @click="saveToLocalStorage">
-          Save to Browser
+        <button class="btn-primary btn-small" :disabled="!saveName.trim()" @click="saveShape">
+          Save
         </button>
-        <button class="btn-primary btn-small" :disabled="!saveName.trim()" @click="saveToIndexedDb">
-          Save to Database
+        <button
+          class="btn-secondary btn-small"
+          :disabled="!isSavedShapeSelected || !saveName.trim()"
+          @click="renameSelected"
+        >
+          Rename
+        </button>
+        <button class="btn-danger btn-small" :disabled="!isSavedShapeSelected" @click="deleteSelected">
+          Delete
         </button>
         <button class="btn-secondary btn-small" @click="clearNotes">
           Clear
@@ -142,18 +136,11 @@
 import { ref, computed, onMounted } from 'vue'
 import { getNoteLabel as computeNoteLabel } from '../utils/noteNames'
 import { cagedCMajorPresets, type ScalePreset, type ScalePosition } from '../data/scaleEditorPresets'
-import { saveScale, getAllSavedScales, deleteScale, type SavedScale } from '../db/practiceDb'
+import { saveScale, getAllSavedScales, deleteScale, renameScale, type SavedScale } from '../db/practiceDb'
 import { useGuitarSampler } from '../composables/useGuitarSampler'
 
-const LOCAL_STORAGE_KEY = 'fingerbuster-scale-saves'
 const FRET_COUNT = 15 // frets 1 through 15; the open string is its own header cell
 const inlayFrets = [3, 5, 7, 9, 12, 15]
-
-interface LocalScaleSave {
-  capo: number
-  positions: ScalePosition[]
-  updatedAt: number
-}
 
 const presets: ScalePreset[] = cagedCMajorPresets
 
@@ -265,28 +252,8 @@ const loadPositions = (positions: ScalePosition[], capoValue: number) => {
   capo.value = capoValue
 }
 
-// --- Local storage saves ---
-const getLocalSaves = (): Record<string, LocalScaleSave> => {
-  try {
-    const raw = localStorage.getItem(LOCAL_STORAGE_KEY)
-    return raw ? JSON.parse(raw) : {}
-  } catch (e) {
-    console.error('Failed to parse local scale saves', e)
-    return {}
-  }
-}
-
-const setLocalSaves = (saves: Record<string, LocalScaleSave>) => {
-  localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(saves))
-}
-
-const localSaveNames = ref<string[]>(Object.keys(getLocalSaves()))
-
-const refreshLocalSaveNames = () => {
-  localSaveNames.value = Object.keys(getLocalSaves())
-}
-
-// --- IndexedDB saves ---
+// Saved shapes live in IndexedDB only, the same mechanism the rest of the
+// app uses for named user saves (see savedProgressions in practiceDb.ts).
 const dbSaves = ref<SavedScale[]>([])
 
 const refreshDbSaves = async () => {
@@ -302,32 +269,15 @@ const saveName = ref('')
 const selectedLoadKey = ref('')
 const statusMessage = ref('')
 
-const canDeleteSelected = computed(() => {
-  return selectedLoadKey.value.startsWith('local:') || selectedLoadKey.value.startsWith('db:')
-})
+const isSavedShapeSelected = computed(() => selectedLoadKey.value.startsWith('db:'))
 
-const saveToLocalStorage = () => {
-  const name = saveName.value.trim()
-  if (!name) return
-  const saves = getLocalSaves()
-  saves[name] = {
-    capo: capo.value,
-    positions: positionsToArray(),
-    updatedAt: Date.now()
-  }
-  setLocalSaves(saves)
-  refreshLocalSaveNames()
-  selectedLoadKey.value = `local:${name}`
-  statusMessage.value = `Saved "${name}" to browser local storage.`
-}
-
-const saveToIndexedDb = async () => {
+const saveShape = async () => {
   const name = saveName.value.trim()
   if (!name) return
   const id = await saveScale(name, capo.value, positionsToArray())
   await refreshDbSaves()
   selectedLoadKey.value = `db:${id}`
-  statusMessage.value = `Saved "${name}" to IndexedDB.`
+  statusMessage.value = `Saved "${name}".`
 }
 
 const handleLoadChange = () => {
@@ -342,14 +292,6 @@ const handleLoadChange = () => {
       loadPositions(preset.positions, preset.capo)
       saveName.value = preset.name
     }
-  } else if (key.startsWith('local:')) {
-    const name = key.slice('local:'.length)
-    const saves = getLocalSaves()
-    const save = saves[name]
-    if (save) {
-      loadPositions(save.positions, save.capo)
-      saveName.value = name
-    }
   } else if (key.startsWith('db:')) {
     const id = Number(key.slice('db:'.length))
     const save = dbSaves.value.find(s => s.id === id)
@@ -360,22 +302,23 @@ const handleLoadChange = () => {
   }
 }
 
+const renameSelected = async () => {
+  if (!isSavedShapeSelected.value) return
+  const name = saveName.value.trim()
+  if (!name) return
+  const id = Number(selectedLoadKey.value.slice('db:'.length))
+  await renameScale(id, name)
+  await refreshDbSaves()
+  statusMessage.value = `Renamed to "${name}".`
+}
+
 const deleteSelected = async () => {
-  const key = selectedLoadKey.value
-  if (key.startsWith('local:')) {
-    const name = key.slice('local:'.length)
-    const saves = getLocalSaves()
-    delete saves[name]
-    setLocalSaves(saves)
-    refreshLocalSaveNames()
-    statusMessage.value = `Deleted "${name}" from browser local storage.`
-  } else if (key.startsWith('db:')) {
-    const id = Number(key.slice('db:'.length))
-    const save = dbSaves.value.find(s => s.id === id)
-    await deleteScale(id)
-    await refreshDbSaves()
-    statusMessage.value = save ? `Deleted "${save.name}" from IndexedDB.` : 'Deleted saved scale.'
-  }
+  if (!isSavedShapeSelected.value) return
+  const id = Number(selectedLoadKey.value.slice('db:'.length))
+  const save = dbSaves.value.find(s => s.id === id)
+  await deleteScale(id)
+  await refreshDbSaves()
+  statusMessage.value = save ? `Deleted "${save.name}".` : 'Deleted saved scale.'
   selectedLoadKey.value = ''
 }
 
