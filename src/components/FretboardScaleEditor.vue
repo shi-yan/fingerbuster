@@ -45,6 +45,29 @@
         />
       </div>
 
+      <div class="control-group">
+        <label class="checkbox-label" for="relative-mode-toggle">
+          <input id="relative-mode-toggle" v-model="relativeMode" type="checkbox" />
+          Relative Mode
+        </label>
+      </div>
+
+      <div v-if="relativeMode" class="control-group relative-mapping">
+        <label>Reference note = degree</label>
+        <div class="mapping-row">
+          <select v-model="refNoteName" class="control-input">
+            <option v-for="n in NOTE_NAMES" :key="n" :value="n">{{ n }}</option>
+          </select>
+          <select v-model.number="refOctave" class="control-input">
+            <option v-for="o in octaveOptions" :key="o" :value="o">{{ o }}</option>
+          </select>
+          <span class="mapping-equals">=</span>
+          <select v-model="refDegree" class="control-input">
+            <option v-for="d in CHROMATIC_SOLFEGE" :key="d" :value="d">{{ d }}</option>
+          </select>
+        </div>
+      </div>
+
       <div class="control-group buttons">
         <button class="btn-primary btn-small" :disabled="!saveName.trim()" @click="saveShape">
           Save
@@ -94,8 +117,10 @@
             @contextmenu.prevent="handleRightClick(string, 0)"
           >
             <div v-if="isMarked(string, 0) && !isBlocked(0)" class="note-marker header-marker">
-              {{ getNoteLabel(string, 0) }}
+              <RelativeNoteLabel v-if="relativeMode" v-bind="getRelativeLabelParts(string, 0)" />
+              <template v-else>{{ getNoteLabel(string, 0) }}</template>
             </div>
+            <RelativeNoteLabel v-else-if="relativeMode" v-bind="getRelativeLabelParts(string, 0)" />
             <span v-else>{{ getNoteLabel(string, 0) }}</span>
           </div>
           <div
@@ -118,7 +143,8 @@
               class="note-marker"
               :class="{ 'note-marker-capo': isCapoNote(fret) }"
             >
-              {{ getNoteLabel(string, fret) }}
+              <RelativeNoteLabel v-if="relativeMode" v-bind="getRelativeLabelParts(string, fret)" />
+              <template v-else>{{ getNoteLabel(string, fret) }}</template>
             </div>
           </div>
         </template>
@@ -134,10 +160,11 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { getNoteLabel as computeNoteLabel } from '../utils/noteNames'
+import { getNoteLabel as computeNoteLabel, getMidiNote, NOTE_NAMES } from '../utils/noteNames'
 import { cagedCMajorPresets, type ScalePreset, type ScalePosition } from '../data/scaleEditorPresets'
 import { saveScale, getAllSavedScales, deleteScale, renameScale, type SavedScale } from '../db/practiceDb'
 import { useGuitarSampler } from '../composables/useGuitarSampler'
+import RelativeNoteLabel from './RelativeNoteLabel.vue'
 
 const FRET_COUNT = 15 // frets 1 through 15; the open string is its own header cell
 const inlayFrets = [3, 5, 7, 9, 12, 15]
@@ -200,6 +227,45 @@ const unmarkNote = (string: number, fret: number) => {
 // capo (the capo just makes frets below it unreachable, handled by isBlocked).
 const getNoteLabel = (string: number, fret: number): string => {
   return computeNoteLabel(string, fret)
+}
+
+// --- Relative (movable-do solfège) mode ---
+// Chromatic movable-do syllables, ascending by semitone from Do.
+const CHROMATIC_SOLFEGE = ['Do', 'Di', 'Re', 'Ri', 'Mi', 'Fa', 'Fi', 'Sol', 'Si', 'La', 'Li', 'Ti']
+const octaveOptions = Array.from({ length: 7 }, (_, i) => i + 1) // 1..7
+
+const relativeMode = ref(false)
+// The reference mapping the user provides, e.g. "D4 == Mi"
+const refNoteName = ref('D')
+const refOctave = ref(4)
+const refDegree = ref('Mi')
+
+// The MIDI pitch of "Do" (the tonic), derived from the reference mapping.
+const tonicMidi = computed(() => {
+  const pitchIndex = NOTE_NAMES.indexOf(refNoteName.value)
+  const refMidi = (refOctave.value + 1) * 12 + pitchIndex
+  const degreeOffset = CHROMATIC_SOLFEGE.indexOf(refDegree.value)
+  return refMidi - degreeOffset
+})
+
+interface RelativeLabelParts {
+  syllable: string
+  dotsAbove: number
+  dotsBelow: number
+}
+
+// Octave 0 is the span from the tonic up to (but not including) the next Do.
+// Notes an octave above get dots on top; notes an octave below get dots underneath.
+const getRelativeLabelParts = (string: number, fret: number): RelativeLabelParts => {
+  const midi = getMidiNote(string, fret)
+  const diff = midi - tonicMidi.value
+  const semitone = ((diff % 12) + 12) % 12
+  const octaveIndex = Math.floor(diff / 12)
+  return {
+    syllable: CHROMATIC_SOLFEGE[semitone] ?? 'Do',
+    dotsAbove: octaveIndex > 0 ? octaveIndex : 0,
+    dotsBelow: octaveIndex < 0 ? -octaveIndex : 0
+  }
 }
 
 const ensureAudioReady = async (): Promise<void> => {
@@ -393,6 +459,31 @@ const printFretboard = () => {
   color: #4b5563;
   text-transform: uppercase;
   letter-spacing: 0.03em;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.checkbox-label input {
+  width: 1rem;
+  height: 1rem;
+  cursor: pointer;
+}
+
+.relative-mapping .mapping-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.mapping-equals {
+  font-weight: 700;
+  color: #4b5563;
 }
 
 .control-input {
