@@ -166,8 +166,8 @@ import { saveScale, getAllSavedScales, deleteScale, renameScale, type SavedScale
 import { useGuitarSampler } from '../composables/useGuitarSampler'
 import RelativeNoteLabel from './RelativeNoteLabel.vue'
 
-const FRET_COUNT = 15 // frets 1 through 15; the open string is its own header cell
-const inlayFrets = [3, 5, 7, 9, 12, 15]
+const FRET_COUNT = 24 // frets 1 through 24; the open string is its own header cell
+const inlayFrets = [3, 5, 7, 9, 12, 15, 17, 19, 21, 24]
 
 const presets: ScalePreset[] = cagedCMajorPresets
 
