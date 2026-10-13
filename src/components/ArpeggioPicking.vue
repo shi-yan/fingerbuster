@@ -5,6 +5,8 @@
       <p class="subtitle">Practice fingerpicking patterns with common chords</p>
     </div>
 
+    <p v-if="audioError" role="alert">{{ audioError }}</p>
+
     <!-- Audio Status -->
     <div v-if="guitarSampler.isLoading.value" class="status-card">
       <div class="loading">
@@ -30,9 +32,9 @@
         <h3>{{ selectedChord.name }} Chord Arpeggio</h3>
         <div class="pattern-description">
           <p><strong>Picking Pattern:</strong> {{ pickingPattern.join('-') }}</p>
-          <p><strong>Description:</strong> {{ selectedPattern?.description || '' }}</p>
+          <p><strong>Description:</strong> {{ selectedPattern?.description || 'Your custom string sequence' }}</p>
           <p><strong>Tempo:</strong> {{ bpm }} BPM</p>
-          <p><strong>Time Signature:</strong> 4/4 (8 eighth notes per measure)</p>
+          <p><strong>Rhythm:</strong> One eighth note per digit ({{ pickingPattern.length }} notes per repeat)</p>
         </div>
       </div>
 
@@ -42,7 +44,7 @@
           <select
             id="pattern"
             v-model="selectedPatternId"
-            :disabled="isPlaying"
+            :disabled="isPlaying || guitarSampler.isLoading.value"
             class="pattern-select"
           >
             <option
@@ -52,8 +54,25 @@
             >
               {{ pattern.name }}
             </option>
+            <option value="custom">Custom pattern…</option>
           </select>
         </div>
+
+        <div v-if="selectedPatternId === 'custom'" class="pattern-selector">
+          <label for="custom-pattern">String sequence:</label>
+          <input
+            id="custom-pattern"
+            v-model="customPattern"
+            class="pattern-select"
+            placeholder="53231323"
+            maxlength="96"
+            :disabled="isPlaying || guitarSampler.isLoading.value"
+            :aria-invalid="!!patternError"
+            aria-describedby="pattern-help pattern-error"
+          />
+        </div>
+        <p id="pattern-help">1 = thinnest string (high E), 6 = thickest (low E). Enter 1–32 notes; spaces and hyphens are optional.</p>
+        <p id="pattern-error" role="status">{{ patternError }}</p>
 
         <div class="tempo-control">
           <label for="tempo">Tempo (BPM):</label>
@@ -64,14 +83,21 @@
             min="40"
             max="200"
             step="5"
+            :disabled="isPlaying || guitarSampler.isLoading.value"
           />
           <span class="tempo-value">{{ bpm }}</span>
         </div>
 
         <div class="playback-controls">
+          <button class="btn btn-play" :disabled="isPlaying || guitarSampler.isLoading.value" @click="playStrum('down')">
+            ↓ Strum Down
+          </button>
+          <button class="btn btn-play" :disabled="isPlaying || guitarSampler.isLoading.value" @click="playStrum('up')">
+            ↑ Strum Up
+          </button>
           <button
             @click="playArpeggio"
-            :disabled="!selectedChord || isPlaying || guitarSampler.isLoading.value"
+            :disabled="!selectedChord || !!patternError || isPlaying || guitarSampler.isLoading.value"
             class="btn btn-play"
           >
             {{ isPlaying ? 'Playing...' : guitarSampler.isLoading.value ? 'Loading...' : 'Play Arpeggio' }}
@@ -79,7 +105,6 @@
 
           <button
             @click="stopPlayback"
-            :disabled="!isPlaying"
             class="btn btn-stop"
           >
             Stop
@@ -87,10 +112,10 @@
 
           <button
             @click="playLoop"
-            :disabled="!selectedChord || isPlaying || guitarSampler.isLoading.value"
+            :disabled="!selectedChord || !!patternError || isPlaying || guitarSampler.isLoading.value"
             class="btn btn-loop"
           >
-            {{ guitarSampler.isLoading.value ? 'Loading...' : 'Loop (4 measures)' }}
+            {{ guitarSampler.isLoading.value ? 'Loading...' : 'Loop (4 repeats)' }}
           </button>
         </div>
       </div>
@@ -109,7 +134,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import ChordCard from './ChordCard.vue'
 import { useGuitarSampler } from '../composables/useGuitarSampler'
 import chordsData from '../data/chords.json'
@@ -117,6 +142,7 @@ import chordsData from '../data/chords.json'
 // localStorage keys
 const STORAGE_KEY_CHORD = 'arpeggio-selected-chord'
 const STORAGE_KEY_PATTERN = 'arpeggio-selected-pattern'
+const STORAGE_KEY_CUSTOM_PATTERN = 'arpeggio-custom-pattern'
 
 interface ChordStringData {
   play: boolean
@@ -156,6 +182,24 @@ const selectedChord = ref<ChordData | null>(null)
 // Available picking patterns
 const pickingPatterns: PickingPattern[] = [
   {
+    id: 'fingerstyle5',
+    name: '53231323 — 5th-string bass',
+    pattern: [5, 3, 2, 3, 1, 3, 2, 3],
+    description: 'Alternating bass and treble, starting on string 5'
+  },
+  {
+    id: 'fingerstyle6',
+    name: '63231323 — 6th-string bass',
+    pattern: [6, 3, 2, 3, 1, 3, 2, 3],
+    description: 'The same fingerpicking motion with a low 6th-string bass'
+  },
+  {
+    id: 'fingerstyle4',
+    name: '43231323 — 4th-string bass',
+    pattern: [4, 3, 2, 3, 1, 3, 2, 3],
+    description: 'Start on string 4 for chords such as D'
+  },
+  {
     id: 'pattern1',
     name: 'Pattern 1 (Bass-Mid-High)',
     pattern: [5, 4, 2, 3, 1, 2, 3, 2],
@@ -170,14 +214,31 @@ const pickingPatterns: PickingPattern[] = [
 ]
 
 // Selected pattern
-const selectedPatternId = ref('pattern1')
+const selectedPatternId = ref('fingerstyle5')
+const customPattern = ref('53231323')
 const selectedPattern = computed(() => {
+  if (selectedPatternId.value === 'custom') return undefined
   const pattern = pickingPatterns.find(p => p.id === selectedPatternId.value)
   return pattern || pickingPatterns[0]
 })
 const pickingPattern = computed(() => {
+  if (selectedPatternId.value === 'custom') {
+    const digits = customPattern.value.replace(/[\s-]/g, '')
+    return /^[1-6]{1,32}$/.test(digits) ? Array.from(digits, Number) : []
+  }
   const pattern = selectedPattern.value
   return pattern ? pattern.pattern : pickingPatterns[0]!.pattern
+})
+const patternError = computed(() => {
+  if (!pickingPattern.value.length) return 'Enter 1–32 string numbers from 1 to 6.'
+  const chord = selectedChord.value
+  if (!chord) return ''
+  const muted = [...new Set(pickingPattern.value)].filter(string =>
+    !(chord[`string_${string}` as keyof ChordData] as ChordStringData).play
+  )
+  return muted.length
+    ? `${chord.name} mutes string${muted.length > 1 ? 's' : ''} ${muted.join(', ')}. Choose another pattern or edit the sequence.`
+    : ''
 })
 
 // Tempo control
@@ -185,6 +246,8 @@ const bpm = ref(80)
 
 // Playback state
 const isPlaying = ref(false)
+const audioError = ref('')
+let playbackRequest = 0
 const currentPlayingString = ref<number | null>(null)
 const playbackProgress = ref(0)
 
@@ -194,9 +257,11 @@ const playbackProgress = ref(0)
 onMounted(() => {
   // Restore selected pattern
   const savedPatternId = localStorage.getItem(STORAGE_KEY_PATTERN)
-  if (savedPatternId && pickingPatterns.some(p => p.id === savedPatternId)) {
+  if (savedPatternId && (savedPatternId === 'custom' || pickingPatterns.some(p => p.id === savedPatternId))) {
     selectedPatternId.value = savedPatternId
   }
+  const savedCustom = localStorage.getItem(STORAGE_KEY_CUSTOM_PATTERN)
+  if (savedCustom !== null) customPattern.value = savedCustom
 
   // Restore selected chord
   const savedChordName = localStorage.getItem(STORAGE_KEY_CHORD)
@@ -228,11 +293,13 @@ watch(selectedPatternId, (newPatternId) => {
   localStorage.setItem(STORAGE_KEY_PATTERN, newPatternId)
   console.log(`💾 Saved pattern selection to localStorage: ${newPatternId}`)
 })
+watch(customPattern, value => localStorage.setItem(STORAGE_KEY_CUSTOM_PATTERN, value))
 
 /**
  * Select a chord
  */
 function selectChord(chord: ChordData): void {
+  stopPlayback()
   selectedChord.value = chord
   // Don't initialize audio here - wait for play button click
 }
@@ -248,167 +315,112 @@ function getFretForString(stringNum: number): number {
   return stringData.fret
 }
 
+// Pending UI updates for the current playback, so Stop can cancel them
+let uiTimers: number[] = []
+
+async function playStrum(direction: 'down' | 'up'): Promise<void> {
+  const chord = selectedChord.value
+  if (!chord || isPlaying.value) return
+  const request = ++playbackRequest
+  audioError.value = ''
+  try {
+    await guitarSampler.ensureReady()
+    if (request !== playbackRequest) return
+    const strings = Array.from({ length: 6 }, (_, i) => {
+      const string = i + 1
+      const note = chord[`string_${string}` as keyof ChordData] as ChordStringData
+      return { string, fret: note.fret, play: note.play }
+    }).filter(note => note.play)
+    guitarSampler.playChord(strings, { direction, velocity: 0.75 })
+  } catch {
+    if (request === playbackRequest) audioError.value = 'Could not load guitar sounds. Check your connection and try again.'
+  }
+}
+
+function clearUiTimers(): void {
+  uiTimers.forEach(id => clearTimeout(id))
+  uiTimers = []
+}
+
+/**
+ * Schedule the selected pattern `loops` times on the audio clock. Audio timing
+ * comes from the AudioContext (sample-accurate); setTimeout only drives the UI.
+ */
+async function startPlayback(loops: number): Promise<void> {
+  if (!selectedChord.value || isPlaying.value || patternError.value) return
+
+  const request = ++playbackRequest
+  audioError.value = ''
+  try {
+    await guitarSampler.ensureReady()
+  } catch (error) {
+    if (request === playbackRequest) audioError.value = 'Could not load guitar sounds. Check your connection and try again.'
+    console.error('❌ Failed to start audio:', error)
+    return
+  }
+  if (request !== playbackRequest) return
+
+  guitarSampler.stopAll()
+  isPlaying.value = true
+  playbackProgress.value = 0
+  clearUiTimers()
+
+  const pattern = pickingPattern.value
+  const totalNotes = pattern.length * loops
+  const noteInterval = (60 / bpm.value) / 2 // eighth note, in seconds
+  const startTime = guitarSampler.currentTime() + 0.08
+
+  for (let i = 0; i < totalNotes; i++) {
+    const stringNum = pattern[i % pattern.length]!
+    const when = startTime + i * noteInterval
+    // Thumb-played bass strings land a little heavier than the fingers
+    const velocity = stringNum >= 4 ? 0.72 : 0.6
+    guitarSampler.playString(stringNum, getFretForString(stringNum), { when, velocity, fingers: true })
+
+    const delayMs = (when - guitarSampler.currentTime()) * 1000
+    uiTimers.push(window.setTimeout(() => {
+      currentPlayingString.value = stringNum
+      playbackProgress.value = (i + 1) / totalNotes * 100
+    }, delayMs))
+  }
+
+  // The chord keeps ringing naturally after the last note; just reset the UI
+  const endMs = (startTime + totalNotes * noteInterval - guitarSampler.currentTime()) * 1000
+  uiTimers.push(window.setTimeout(() => {
+    isPlaying.value = false
+    currentPlayingString.value = null
+    playbackProgress.value = 0
+    uiTimers = []
+  }, endMs + 300))
+}
+
 /**
  * Play the arpeggio pattern once
  */
-async function playArpeggio(): Promise<void> {
-  if (!selectedChord.value || isPlaying.value) return
-
-  console.log('🎸 Play button clicked - starting playback...')
-
-  // CRITICAL: Start audio context FIRST, before creating any Tone.js objects
-  // This ensures AudioContext is running BEFORE the Sampler is created
-  try {
-    console.log('⏳ Step 1: Starting audio context...')
-    await guitarSampler.startAudio()  // This also imports Tone.js
-    console.log('✅ Step 1 complete: Audio context is running')
-  } catch (error) {
-    console.error('❌ Failed to start audio:', error)
-    return
-  }
-
-  // THEN create the sampler (with AudioContext already running)
-  try {
-    if (!guitarSampler.isLoaded.value) {
-      console.log('⏳ Step 2: Creating sampler with running AudioContext...')
-      await guitarSampler.initializeSampler()
-      console.log('✅ Step 2 complete: Sampler created and samples loaded')
-    } else {
-      console.log('ℹ️ Sampler already loaded, skipping Step 2')
-    }
-  } catch (error) {
-    console.error('❌ Failed to initialize sampler:', error)
-    return
-  }
-
-  isPlaying.value = true
-  playbackProgress.value = 0
-
-  // Schedule the arpeggio pattern using simple setTimeout (no Transport)
-  const pattern = pickingPattern.value
-  const totalNotes = pattern.length
-  const noteInterval = (60 / bpm.value) / 2 * 1000 // Eighth note duration in ms
-
-  console.log(`🎵 Playing ${totalNotes} notes with ${noteInterval}ms interval`)
-
-  // Play each note with setTimeout
-  pattern.forEach((stringNum, index) => {
-    setTimeout(() => {
-      const fret = getFretForString(stringNum)
-      const note = guitarSampler.getNoteForStringAndFret(stringNum, fret)
-
-      console.log(`  🎵 Note ${index + 1}/${totalNotes}: String ${stringNum}, Fret ${fret}, Note ${note}`)
-
-      // Play the note directly (no scheduling, play NOW)
-      if (guitarSampler.sampler.value) {
-        guitarSampler.sampler.value.triggerAttackRelease(note, '8n')
-      }
-
-      // Update UI
-      currentPlayingString.value = stringNum
-      playbackProgress.value = (index + 1) / totalNotes * 100
-
-      // Clear on last note
-      if (index === totalNotes - 1) {
-        setTimeout(() => {
-          isPlaying.value = false
-          currentPlayingString.value = null
-          playbackProgress.value = 0
-          console.log('✅ Playback complete')
-        }, 500)
-      }
-    }, index * noteInterval)
-  })
+function playArpeggio(): Promise<void> {
+  return startPlayback(1)
 }
 
 /**
- * Play the arpeggio in a loop (4 measures)
+ * Play the arpeggio in a loop (4 repeats)
  */
-async function playLoop(): Promise<void> {
-  if (!selectedChord.value || isPlaying.value) return
-
-  console.log('🔁 Loop button clicked - starting looped playback...')
-
-  // CRITICAL: Start audio context FIRST, before creating any Tone.js objects
-  try {
-    console.log('⏳ Step 1: Starting audio context...')
-    await guitarSampler.startAudio()
-    console.log('✅ Step 1 complete: Audio context is running')
-  } catch (error) {
-    console.error('❌ Failed to start audio:', error)
-    return
-  }
-
-  // THEN create the sampler (with AudioContext already running)
-  try {
-    if (!guitarSampler.isLoaded.value) {
-      console.log('⏳ Step 2: Creating sampler with running AudioContext...')
-      await guitarSampler.initializeSampler()
-      console.log('✅ Step 2 complete: Sampler created and samples loaded')
-    } else {
-      console.log('ℹ️ Sampler already loaded, skipping Step 2')
-    }
-  } catch (error) {
-    console.error('❌ Failed to initialize sampler:', error)
-    return
-  }
-
-  isPlaying.value = true
-  playbackProgress.value = 0
-
-  const pattern = pickingPattern.value
-  const totalNotes = pattern.length
-  const noteInterval = (60 / bpm.value) / 2 * 1000 // Eighth note duration in ms
-  const loops = 4
-
-  console.log(`🔁 Playing ${loops} loops of ${totalNotes} notes with ${noteInterval}ms interval`)
-
-  // Play each note in all 4 loops
-  for (let loopIndex = 0; loopIndex < loops; loopIndex++) {
-    pattern.forEach((stringNum, noteIndex) => {
-      const absoluteIndex = loopIndex * totalNotes + noteIndex
-      const delay = absoluteIndex * noteInterval
-
-      setTimeout(() => {
-        const fret = getFretForString(stringNum)
-        const note = guitarSampler.getNoteForStringAndFret(stringNum, fret)
-
-        console.log(`  🎵 Loop ${loopIndex + 1}/${loops}, Note ${noteIndex + 1}/${totalNotes}: String ${stringNum}, Fret ${fret}, Note ${note}`)
-
-        // Play the note directly
-        if (guitarSampler.sampler.value) {
-          guitarSampler.sampler.value.triggerAttackRelease(note, '8n')
-        }
-
-        // Update UI
-        currentPlayingString.value = stringNum
-        playbackProgress.value = (absoluteIndex + 1) / (totalNotes * loops) * 100
-
-        // Clear on last note of last loop
-        if (loopIndex === loops - 1 && noteIndex === totalNotes - 1) {
-          setTimeout(() => {
-            isPlaying.value = false
-            currentPlayingString.value = null
-            playbackProgress.value = 0
-            console.log('✅ Loop playback complete')
-          }, 500)
-        }
-      }, delay)
-    })
-  }
+function playLoop(): Promise<void> {
+  return startPlayback(4)
 }
 
 /**
- * Stop current playback
+ * Stop current playback, including notes already scheduled
  */
 function stopPlayback(): void {
-  console.log('⏹️ Stop button clicked')
+  playbackRequest++
   guitarSampler.stopAll()
+  clearUiTimers()
   isPlaying.value = false
   currentPlayingString.value = null
   playbackProgress.value = 0
-  // Note: Can't cancel setTimeout callbacks, but state is reset
 }
+
+onUnmounted(stopPlayback)
 </script>
 
 <style scoped>

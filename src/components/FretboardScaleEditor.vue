@@ -4,6 +4,7 @@
       <h2>Fretboard Scale Editor</h2>
       <p class="subtitle">Left-click a fret to mark it and hear the note. Right-click a marked fret to remove it.</p>
       <p v-if="guitarSampler.isLoading.value" class="loading-note">Loading guitar sounds...</p>
+      <p v-if="audioError" role="alert">{{ audioError }}</p>
     </div>
 
     <!-- Controls -->
@@ -159,7 +160,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { getNoteLabel as computeNoteLabel, getMidiNote, NOTE_NAMES } from '../utils/noteNames'
 import { cagedCMajorPresets, type ScalePreset, type ScalePosition } from '../data/scaleEditorPresets'
 import { saveScale, getAllSavedScales, deleteScale, renameScale, type SavedScale } from '../db/practiceDb'
@@ -172,6 +173,12 @@ const inlayFrets = [3, 5, 7, 9, 12, 15, 17, 19, 21, 24]
 const presets: ScalePreset[] = cagedCMajorPresets
 
 const guitarSampler = useGuitarSampler()
+const audioError = ref('')
+let noteRequest = 0
+onUnmounted(() => {
+  noteRequest++
+  guitarSampler.stopAll()
+})
 
 const fretNumbers = computed(() => Array.from({ length: FRET_COUNT }, (_, i) => i + 1))
 
@@ -268,24 +275,21 @@ const getRelativeLabelParts = (string: number, fret: number): RelativeLabelParts
   }
 }
 
-const ensureAudioReady = async (): Promise<void> => {
-  await guitarSampler.startAudio()
-  if (!guitarSampler.isLoaded.value) {
-    await guitarSampler.initializeSampler()
-  }
-}
-
 const handleLeftClick = async (string: number, fret: number) => {
   if (isBlocked(fret)) return
+  const request = ++noteRequest
+  audioError.value = ''
   // The capo's own fret is auto-marked already; don't also add it as a
   // regular (removable) mark.
   if (!isCapoNote(fret)) {
     markNote(string, fret)
   }
   try {
-    await ensureAudioReady()
+    await guitarSampler.ensureReady()
+    if (request !== noteRequest) return
     guitarSampler.playString(string, fret)
   } catch (error) {
+    if (request === noteRequest) audioError.value = 'Could not load guitar sounds. Check your connection and try again.'
     console.error('Failed to play note:', error)
   }
 }

@@ -4,6 +4,37 @@ A web-based guitar practice application for the **Aeroband MIDI Guitar**. Practi
 
 **Try it now:** [https://shi-yan.github.io/fingerbuster](https://shi-yan.github.io/fingerbuster)
 
+## Guitar audio
+
+Chord previews, fingerpicking patterns, and Scale Editor notes share the Warm
+Seagull sample bank used by Guitoro (manifest `2026-10-05.7bd381`). The 135
+recordings cover MIDI 40–84 in three dynamic layers, packaged in both Opus and
+AAC (270 files, about 21.5 MB). Higher fretboard pitches transpose the closest
+recording. Vite copies these files into the build; playback requests them from
+the app's own base URL, without contacting Guitoro or a sample CDN. First use
+decodes the bank into memory. This does not provide offline caching of the app.
+
+The recordings are Gary Campion's FlameStudios samples, converted by Guitoro.
+Their GPL-3.0-or-later license, original source link, and conversion notes are in
+[the bundled license](public/samples/acoustic-seagull/LICENSE.txt). Preserve
+these notices and satisfy the license's corresponding-source requirements when
+redistributing the samples. The manifest retains upstream metadata, including
+noise entries that this app does not load or distribute.
+
+The independently implemented player uses the reference velocity layers,
+attack loudness weighting, gain and filter curves, acoustic EQ, room reverb,
+limiter, pick-position filtering, and softer finger attacks. **This is not a
+verified exact output match:** synthesized pick/scrape/release noises, chord
+loudness compensation, stroke dynamics, and some damping details still differ.
+The strum scheduler preserves string order and lets notes ring naturally.
+No Guitoro application JavaScript is included in the app.
+
+To restore the pinned sample files, run `python3 scripts/fetch-guitar-samples.py`
+(requires curl and network access). `SHA256SUMS` records the downloaded bytes.
+Run `node --test tests/guitarEngine.test.mjs` to check scheduling, sample
+integrity, velocity layers, and codec fallback; run `npm run build` for the
+production build and type check.
+
 ## What Can You Do?
 
 ### 🎯 Practice Chords

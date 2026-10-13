@@ -559,6 +559,7 @@ PracticeMode includes a debug panel showing:
 ### Important Files
 
 - `src/composables/useMidi.ts` - MIDI handling singleton
+- `src/audio/guitarEngine.ts` - Sample-based guitar audio engine (Web Audio, one voice per string, release envelopes); use via `useGuitarSampler()`
 - `src/components/PracticeMode.vue` - Chord practice logic
 - `src/components/FretBoard.vue` - Fretboard visualization
 - `src/data/chords.json` - Chord definitions

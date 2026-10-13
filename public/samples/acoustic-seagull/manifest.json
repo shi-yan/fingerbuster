@@ -1,0 +1,2252 @@
+{
+  "instrument": "acoustic-seagull",
+  "version": "2026-10-05.7bd381",
+  "sampleRate": 48000,
+  "codecs": {
+    "opus": {
+      "ext": ".ogg",
+      "primingSamples": 0
+    },
+    "aac": {
+      "ext": ".m4a",
+      "primingSamples": 1024
+    }
+  },
+  "zones": [
+    {
+      "midi": 40,
+      "layers": [
+        {
+          "velLo": 0,
+          "velHi": 0.4,
+          "files": [
+            "n40-p.97b759"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            -0.2
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.4,
+          "velHi": 0.75,
+          "files": [
+            "n40-mf.5e3394"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            0.1
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.75,
+          "velHi": 1,
+          "files": [
+            "n40-f.681f42"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            0.3
+          ],
+          "tier": 1
+        }
+      ],
+      "lengthSec": 8
+    },
+    {
+      "midi": 41,
+      "layers": [
+        {
+          "velLo": 0,
+          "velHi": 0.4,
+          "files": [
+            "n41-p.98d1c5"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            -0.1
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.4,
+          "velHi": 0.75,
+          "files": [
+            "n41-mf.e2608f"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            0.1
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.75,
+          "velHi": 1,
+          "files": [
+            "n41-f.09105e"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            -0.1
+          ],
+          "tier": 2
+        }
+      ],
+      "lengthSec": 8
+    },
+    {
+      "midi": 42,
+      "layers": [
+        {
+          "velLo": 0,
+          "velHi": 0.4,
+          "files": [
+            "n42-p.b07290"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            0.5
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.4,
+          "velHi": 0.75,
+          "files": [
+            "n42-mf.8ba106"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            0.5
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.75,
+          "velHi": 1,
+          "files": [
+            "n42-f.9d49e0"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            0.1
+          ],
+          "tier": 1
+        }
+      ],
+      "lengthSec": 8
+    },
+    {
+      "midi": 43,
+      "layers": [
+        {
+          "velLo": 0,
+          "velHi": 0.4,
+          "files": [
+            "n43-p.05860a"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            0.4
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.4,
+          "velHi": 0.75,
+          "files": [
+            "n43-mf.f08f3d"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            0.3
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.75,
+          "velHi": 1,
+          "files": [
+            "n43-f.d59ec9"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            0.5
+          ],
+          "tier": 2
+        }
+      ],
+      "lengthSec": 8
+    },
+    {
+      "midi": 44,
+      "layers": [
+        {
+          "velLo": 0,
+          "velHi": 0.4,
+          "files": [
+            "n44-p.e00028"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            0.1
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.4,
+          "velHi": 0.75,
+          "files": [
+            "n44-mf.540caa"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            -0.2
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.75,
+          "velHi": 1,
+          "files": [
+            "n44-f.098db1"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            0.1
+          ],
+          "tier": 1
+        }
+      ],
+      "lengthSec": 8
+    },
+    {
+      "midi": 45,
+      "layers": [
+        {
+          "velLo": 0,
+          "velHi": 0.4,
+          "files": [
+            "n45-p.a0658f"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            0.2
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.4,
+          "velHi": 0.75,
+          "files": [
+            "n45-mf.45fa78"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            0.4
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.75,
+          "velHi": 1,
+          "files": [
+            "n45-f.1155f1"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            0.1
+          ],
+          "tier": 2
+        }
+      ],
+      "lengthSec": 8
+    },
+    {
+      "midi": 46,
+      "layers": [
+        {
+          "velLo": 0,
+          "velHi": 0.4,
+          "files": [
+            "n46-p.0dc891"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            0.1
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.4,
+          "velHi": 0.75,
+          "files": [
+            "n46-mf.af21dc"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            0.2
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.75,
+          "velHi": 1,
+          "files": [
+            "n46-f.bcad3b"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            0
+          ],
+          "tier": 1
+        }
+      ],
+      "lengthSec": 8
+    },
+    {
+      "midi": 47,
+      "layers": [
+        {
+          "velLo": 0,
+          "velHi": 0.4,
+          "files": [
+            "n47-p.12f07c"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            0.2
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.4,
+          "velHi": 0.75,
+          "files": [
+            "n47-mf.407276"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            0.2
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.75,
+          "velHi": 1,
+          "files": [
+            "n47-f.e945d7"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            0
+          ],
+          "tier": 2
+        }
+      ],
+      "lengthSec": 8
+    },
+    {
+      "midi": 48,
+      "layers": [
+        {
+          "velLo": 0,
+          "velHi": 0.4,
+          "files": [
+            "n48-p.722b5b"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            0
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.4,
+          "velHi": 0.75,
+          "files": [
+            "n48-mf.faa69c"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            0.1
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.75,
+          "velHi": 1,
+          "files": [
+            "n48-f.5697f4"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            0.1
+          ],
+          "tier": 1
+        }
+      ],
+      "lengthSec": 8
+    },
+    {
+      "midi": 49,
+      "layers": [
+        {
+          "velLo": 0,
+          "velHi": 0.4,
+          "files": [
+            "n49-p.5d304b"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            0.3
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.4,
+          "velHi": 0.75,
+          "files": [
+            "n49-mf.08ddba"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            0.2
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.75,
+          "velHi": 1,
+          "files": [
+            "n49-f.79a206"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            0.4
+          ],
+          "tier": 2
+        }
+      ],
+      "lengthSec": 8
+    },
+    {
+      "midi": 50,
+      "layers": [
+        {
+          "velLo": 0,
+          "velHi": 0.4,
+          "files": [
+            "n50-p.ab2ed0"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            0.3
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.4,
+          "velHi": 0.75,
+          "files": [
+            "n50-mf.836b24"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            0.7
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.75,
+          "velHi": 1,
+          "files": [
+            "n50-f.224820"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            0.6
+          ],
+          "tier": 1
+        }
+      ],
+      "lengthSec": 8
+    },
+    {
+      "midi": 51,
+      "layers": [
+        {
+          "velLo": 0,
+          "velHi": 0.4,
+          "files": [
+            "n51-p.9b6479"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            0
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.4,
+          "velHi": 0.75,
+          "files": [
+            "n51-mf.2fef7f"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            0.1
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.75,
+          "velHi": 1,
+          "files": [
+            "n51-f.5987a8"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            0.2
+          ],
+          "tier": 2
+        }
+      ],
+      "lengthSec": 8
+    },
+    {
+      "midi": 52,
+      "layers": [
+        {
+          "velLo": 0,
+          "velHi": 0.4,
+          "files": [
+            "n52-p.45a0dd"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            -0.1
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.4,
+          "velHi": 0.75,
+          "files": [
+            "n52-mf.34dba1"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            -0.1
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.75,
+          "velHi": 1,
+          "files": [
+            "n52-f.209993"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            0
+          ],
+          "tier": 1
+        }
+      ],
+      "lengthSec": 8
+    },
+    {
+      "midi": 53,
+      "layers": [
+        {
+          "velLo": 0,
+          "velHi": 0.4,
+          "files": [
+            "n53-p.5cfb81"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            0.2
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.4,
+          "velHi": 0.75,
+          "files": [
+            "n53-mf.6ccb09"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            0.4
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.75,
+          "velHi": 1,
+          "files": [
+            "n53-f.cc90bb"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            0.4
+          ],
+          "tier": 2
+        }
+      ],
+      "lengthSec": 5.74
+    },
+    {
+      "midi": 54,
+      "layers": [
+        {
+          "velLo": 0,
+          "velHi": 0.4,
+          "files": [
+            "n54-p.ec170e"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            0.6
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.4,
+          "velHi": 0.75,
+          "files": [
+            "n54-mf.b677a1"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            0.6
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.75,
+          "velHi": 1,
+          "files": [
+            "n54-f.0e1a69"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            0.4
+          ],
+          "tier": 1
+        }
+      ],
+      "lengthSec": 8
+    },
+    {
+      "midi": 55,
+      "layers": [
+        {
+          "velLo": 0,
+          "velHi": 0.4,
+          "files": [
+            "n55-p.229b47"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            0.6
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.4,
+          "velHi": 0.75,
+          "files": [
+            "n55-mf.e39229"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            0.8
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.75,
+          "velHi": 1,
+          "files": [
+            "n55-f.429b08"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            0.9
+          ],
+          "tier": 2
+        }
+      ],
+      "lengthSec": 8
+    },
+    {
+      "midi": 56,
+      "layers": [
+        {
+          "velLo": 0,
+          "velHi": 0.4,
+          "files": [
+            "n56-p.6085d0"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            0.4
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.4,
+          "velHi": 0.75,
+          "files": [
+            "n56-mf.e65d0e"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            0.6
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.75,
+          "velHi": 1,
+          "files": [
+            "n56-f.a0f338"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            0.6
+          ],
+          "tier": 1
+        }
+      ],
+      "lengthSec": 8
+    },
+    {
+      "midi": 57,
+      "layers": [
+        {
+          "velLo": 0,
+          "velHi": 0.4,
+          "files": [
+            "n57-p.2471c1"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            0.7
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.4,
+          "velHi": 0.75,
+          "files": [
+            "n57-mf.565a27"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            0.8
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.75,
+          "velHi": 1,
+          "files": [
+            "n57-f.cdc5a1"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            0.8
+          ],
+          "tier": 2
+        }
+      ],
+      "lengthSec": 8
+    },
+    {
+      "midi": 58,
+      "layers": [
+        {
+          "velLo": 0,
+          "velHi": 0.4,
+          "files": [
+            "n58-p.992f30"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            0.9
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.4,
+          "velHi": 0.75,
+          "files": [
+            "n58-mf.9ed288"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            0.8
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.75,
+          "velHi": 1,
+          "files": [
+            "n58-f.e1257b"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            0.8
+          ],
+          "tier": 1
+        }
+      ],
+      "lengthSec": 8
+    },
+    {
+      "midi": 59,
+      "layers": [
+        {
+          "velLo": 0,
+          "velHi": 0.4,
+          "files": [
+            "n59-p.0cec92"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            1
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.4,
+          "velHi": 0.75,
+          "files": [
+            "n59-mf.37b13d"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            1.1
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.75,
+          "velHi": 1,
+          "files": [
+            "n59-f.69e160"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            1.2
+          ],
+          "tier": 2
+        }
+      ],
+      "lengthSec": 8
+    },
+    {
+      "midi": 60,
+      "layers": [
+        {
+          "velLo": 0,
+          "velHi": 0.4,
+          "files": [
+            "n60-p.363098"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            1
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.4,
+          "velHi": 0.75,
+          "files": [
+            "n60-mf.fd2c63"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            1.3
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.75,
+          "velHi": 1,
+          "files": [
+            "n60-f.ce3af7"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            1.6
+          ],
+          "tier": 1
+        }
+      ],
+      "lengthSec": 8
+    },
+    {
+      "midi": 61,
+      "layers": [
+        {
+          "velLo": 0,
+          "velHi": 0.4,
+          "files": [
+            "n61-p.880107"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            1
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.4,
+          "velHi": 0.75,
+          "files": [
+            "n61-mf.5112d3"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            1.2
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.75,
+          "velHi": 1,
+          "files": [
+            "n61-f.0766a7"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            0.9
+          ],
+          "tier": 2
+        }
+      ],
+      "lengthSec": 8
+    },
+    {
+      "midi": 62,
+      "layers": [
+        {
+          "velLo": 0,
+          "velHi": 0.4,
+          "files": [
+            "n62-p.706623"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            0.9
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.4,
+          "velHi": 0.75,
+          "files": [
+            "n62-mf.756979"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            1.2
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.75,
+          "velHi": 1,
+          "files": [
+            "n62-f.a0504d"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            1.7
+          ],
+          "tier": 1
+        }
+      ],
+      "lengthSec": 8
+    },
+    {
+      "midi": 63,
+      "layers": [
+        {
+          "velLo": 0,
+          "velHi": 0.4,
+          "files": [
+            "n63-p.2c71e7"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            1.1
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.4,
+          "velHi": 0.75,
+          "files": [
+            "n63-mf.c9ec75"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            1.3
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.75,
+          "velHi": 1,
+          "files": [
+            "n63-f.b24785"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            1.8
+          ],
+          "tier": 2
+        }
+      ],
+      "lengthSec": 8
+    },
+    {
+      "midi": 64,
+      "layers": [
+        {
+          "velLo": 0,
+          "velHi": 0.4,
+          "files": [
+            "n64-p.0f4f7d"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            1
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.4,
+          "velHi": 0.75,
+          "files": [
+            "n64-mf.1e4011"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            1.2
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.75,
+          "velHi": 1,
+          "files": [
+            "n64-f.d2875d"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            2.2
+          ],
+          "tier": 1
+        }
+      ],
+      "lengthSec": 6.6
+    },
+    {
+      "midi": 65,
+      "layers": [
+        {
+          "velLo": 0,
+          "velHi": 0.4,
+          "files": [
+            "n65-p.06006a"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            1.2
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.4,
+          "velHi": 0.75,
+          "files": [
+            "n65-mf.12aa13"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            1.4
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.75,
+          "velHi": 1,
+          "files": [
+            "n65-f.687202"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            1.8
+          ],
+          "tier": 2
+        }
+      ],
+      "lengthSec": 6.28
+    },
+    {
+      "midi": 66,
+      "layers": [
+        {
+          "velLo": 0,
+          "velHi": 0.4,
+          "files": [
+            "n66-p.ba1266"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            1.3
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.4,
+          "velHi": 0.75,
+          "files": [
+            "n66-mf.1ba0d7"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            1.4
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.75,
+          "velHi": 1,
+          "files": [
+            "n66-f.dcbb19"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            1.4
+          ],
+          "tier": 1
+        }
+      ],
+      "lengthSec": 7.13
+    },
+    {
+      "midi": 67,
+      "layers": [
+        {
+          "velLo": 0,
+          "velHi": 0.4,
+          "files": [
+            "n67-p.22590d"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            1.1
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.4,
+          "velHi": 0.75,
+          "files": [
+            "n67-mf.e1877d"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            1.4
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.75,
+          "velHi": 1,
+          "files": [
+            "n67-f.843e98"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            1.8
+          ],
+          "tier": 2
+        }
+      ],
+      "lengthSec": 8
+    },
+    {
+      "midi": 68,
+      "layers": [
+        {
+          "velLo": 0,
+          "velHi": 0.4,
+          "files": [
+            "n68-p.28754c"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            1.1
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.4,
+          "velHi": 0.75,
+          "files": [
+            "n68-mf.1d1c96"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            1.4
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.75,
+          "velHi": 1,
+          "files": [
+            "n68-f.5ee4bb"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            2.2
+          ],
+          "tier": 1
+        }
+      ],
+      "lengthSec": 8
+    },
+    {
+      "midi": 69,
+      "layers": [
+        {
+          "velLo": 0,
+          "velHi": 0.4,
+          "files": [
+            "n69-p.401600"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            1
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.4,
+          "velHi": 0.75,
+          "files": [
+            "n69-mf.95de62"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            1.2
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.75,
+          "velHi": 1,
+          "files": [
+            "n69-f.33d9fc"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            1.8
+          ],
+          "tier": 2
+        }
+      ],
+      "lengthSec": 7.28
+    },
+    {
+      "midi": 70,
+      "layers": [
+        {
+          "velLo": 0,
+          "velHi": 0.4,
+          "files": [
+            "n70-p.3f38cb"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            1.5
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.4,
+          "velHi": 0.75,
+          "files": [
+            "n70-mf.3c08f2"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            1.5
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.75,
+          "velHi": 1,
+          "files": [
+            "n70-f.44f701"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            1.7
+          ],
+          "tier": 1
+        }
+      ],
+      "lengthSec": 6.61
+    },
+    {
+      "midi": 71,
+      "layers": [
+        {
+          "velLo": 0,
+          "velHi": 0.4,
+          "files": [
+            "n71-p.cb7741"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            1.2
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.4,
+          "velHi": 0.75,
+          "files": [
+            "n71-mf.d23ef7"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            1.2
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.75,
+          "velHi": 1,
+          "files": [
+            "n71-f.1f685a"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            1.8
+          ],
+          "tier": 2
+        }
+      ],
+      "lengthSec": 8
+    },
+    {
+      "midi": 72,
+      "layers": [
+        {
+          "velLo": 0,
+          "velHi": 0.4,
+          "files": [
+            "n72-p.008bd0"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            1.2
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.4,
+          "velHi": 0.75,
+          "files": [
+            "n72-mf.d65904"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            1.5
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.75,
+          "velHi": 1,
+          "files": [
+            "n72-f.682dc6"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            1.6
+          ],
+          "tier": 1
+        }
+      ],
+      "lengthSec": 2.96
+    },
+    {
+      "midi": 73,
+      "layers": [
+        {
+          "velLo": 0,
+          "velHi": 0.4,
+          "files": [
+            "n73-p.603268"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            1.3
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.4,
+          "velHi": 0.75,
+          "files": [
+            "n73-mf.2972d9"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            1.8
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.75,
+          "velHi": 1,
+          "files": [
+            "n73-f.bed55e"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            2
+          ],
+          "tier": 2
+        }
+      ],
+      "lengthSec": 7.15
+    },
+    {
+      "midi": 74,
+      "layers": [
+        {
+          "velLo": 0,
+          "velHi": 0.4,
+          "files": [
+            "n74-p.a33538"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            1
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.4,
+          "velHi": 0.75,
+          "files": [
+            "n74-mf.e55059"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            1.4
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.75,
+          "velHi": 1,
+          "files": [
+            "n74-f.395d3c"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            2.1
+          ],
+          "tier": 1
+        }
+      ],
+      "lengthSec": 4.99
+    },
+    {
+      "midi": 75,
+      "layers": [
+        {
+          "velLo": 0,
+          "velHi": 0.4,
+          "files": [
+            "n75-p.2cffa8"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            1
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.4,
+          "velHi": 0.75,
+          "files": [
+            "n75-mf.f0bf2d"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            0.6
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.75,
+          "velHi": 1,
+          "files": [
+            "n75-f.b4dea9"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            2.3
+          ],
+          "tier": 2
+        }
+      ],
+      "lengthSec": 3.97
+    },
+    {
+      "midi": 76,
+      "layers": [
+        {
+          "velLo": 0,
+          "velHi": 0.4,
+          "files": [
+            "n76-p.d9720b"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            0.7
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.4,
+          "velHi": 0.75,
+          "files": [
+            "n76-mf.0f9775"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            1
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.75,
+          "velHi": 1,
+          "files": [
+            "n76-f.bb3071"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            2.1
+          ],
+          "tier": 1
+        }
+      ],
+      "lengthSec": 8
+    },
+    {
+      "midi": 77,
+      "layers": [
+        {
+          "velLo": 0,
+          "velHi": 0.4,
+          "files": [
+            "n77-p.bc055f"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            1
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.4,
+          "velHi": 0.75,
+          "files": [
+            "n77-mf.e7a5c9"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            1.3
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.75,
+          "velHi": 1,
+          "files": [
+            "n77-f.5bd80a"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            1.4
+          ],
+          "tier": 2
+        }
+      ],
+      "lengthSec": 8
+    },
+    {
+      "midi": 78,
+      "layers": [
+        {
+          "velLo": 0,
+          "velHi": 0.4,
+          "files": [
+            "n78-p.f37775"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            1.2
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.4,
+          "velHi": 0.75,
+          "files": [
+            "n78-mf.decae8"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            1.5
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.75,
+          "velHi": 1,
+          "files": [
+            "n78-f.79287b"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            1.6
+          ],
+          "tier": 1
+        }
+      ],
+      "lengthSec": 8
+    },
+    {
+      "midi": 79,
+      "layers": [
+        {
+          "velLo": 0,
+          "velHi": 0.4,
+          "files": [
+            "n79-p.626294"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            0.7
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.4,
+          "velHi": 0.75,
+          "files": [
+            "n79-mf.882a5c"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            1.2
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.75,
+          "velHi": 1,
+          "files": [
+            "n79-f.f3cdf1"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            1.3
+          ],
+          "tier": 2
+        }
+      ],
+      "lengthSec": 4.92
+    },
+    {
+      "midi": 80,
+      "layers": [
+        {
+          "velLo": 0,
+          "velHi": 0.4,
+          "files": [
+            "n80-p.ecdbb7"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            0.9
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.4,
+          "velHi": 0.75,
+          "files": [
+            "n80-mf.8279c6"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            1.2
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.75,
+          "velHi": 1,
+          "files": [
+            "n80-f.c25d46"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            1.9
+          ],
+          "tier": 1
+        }
+      ],
+      "lengthSec": 3.85
+    },
+    {
+      "midi": 81,
+      "layers": [
+        {
+          "velLo": 0,
+          "velHi": 0.4,
+          "files": [
+            "n81-p.a5d28b"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            0.8
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.4,
+          "velHi": 0.75,
+          "files": [
+            "n81-mf.6a678e"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            0.8
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.75,
+          "velHi": 1,
+          "files": [
+            "n81-f.841bca"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            1.8
+          ],
+          "tier": 2
+        }
+      ],
+      "lengthSec": 3.88
+    },
+    {
+      "midi": 82,
+      "layers": [
+        {
+          "velLo": 0,
+          "velHi": 0.4,
+          "files": [
+            "n82-p.7fee96"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            1.1
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.4,
+          "velHi": 0.75,
+          "files": [
+            "n82-mf.e1b2e0"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            1.2
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.75,
+          "velHi": 1,
+          "files": [
+            "n82-f.f0d5ba"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            1.5
+          ],
+          "tier": 1
+        }
+      ],
+      "lengthSec": 3.23
+    },
+    {
+      "midi": 83,
+      "layers": [
+        {
+          "velLo": 0,
+          "velHi": 0.4,
+          "files": [
+            "n83-p.6f9a74"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            1.4
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.4,
+          "velHi": 0.75,
+          "files": [
+            "n83-mf.cdbabe"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            1.3
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.75,
+          "velHi": 1,
+          "files": [
+            "n83-f.b1abb0"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            3
+          ],
+          "tier": 2
+        }
+      ],
+      "lengthSec": 5.71
+    },
+    {
+      "midi": 84,
+      "layers": [
+        {
+          "velLo": 0,
+          "velHi": 0.4,
+          "files": [
+            "n84-p.55a786"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            1.1
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.4,
+          "velHi": 0.75,
+          "files": [
+            "n84-mf.986e2e"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            1.3
+          ],
+          "tier": 2
+        },
+        {
+          "velLo": 0.75,
+          "velHi": 1,
+          "files": [
+            "n84-f.725955"
+          ],
+          "gainDb": 0,
+          "voiceDb": [
+            2.2
+          ],
+          "tier": 1
+        }
+      ],
+      "lengthSec": 2.35
+    }
+  ],
+  "noises": {
+    "pick": [
+      {
+        "file": "pick-1.b3b554",
+        "gainDb": -20,
+        "tier": 1
+      },
+      {
+        "file": "pick-2.2ebc58",
+        "gainDb": -20,
+        "tier": 1
+      },
+      {
+        "file": "pick-3.b6f085",
+        "gainDb": -20,
+        "tier": 1
+      },
+      {
+        "file": "pick-4.8edf51",
+        "gainDb": -20,
+        "tier": 1
+      }
+    ],
+    "dead": [
+      {
+        "file": "dead-1.31b537",
+        "gainDb": -12,
+        "tier": 1
+      },
+      {
+        "file": "dead-2.8a8709",
+        "gainDb": -12,
+        "tier": 1
+      },
+      {
+        "file": "dead-3.b64048",
+        "gainDb": -12,
+        "tier": 1
+      }
+    ],
+    "release": [
+      {
+        "file": "release-1.84b29a",
+        "gainDb": -28,
+        "tier": 1
+      },
+      {
+        "file": "release-2.9b9ebb",
+        "gainDb": -28,
+        "tier": 1
+      }
+    ],
+    "squeak": [
+      {
+        "file": "squeak-1.8630be",
+        "gainDb": -26,
+        "tier": 1
+      },
+      {
+        "file": "squeak-2.2b1269",
+        "gainDb": -26,
+        "tier": 1
+      }
+    ],
+    "palm": [
+      {
+        "file": "palm-n40.de83e4",
+        "gainDb": -3.4,
+        "tier": 2,
+        "midi": 40
+      },
+      {
+        "file": "palm-n41.08f7dc",
+        "gainDb": -3.4,
+        "tier": 2,
+        "midi": 41
+      },
+      {
+        "file": "palm-n42.545071",
+        "gainDb": -3.4,
+        "tier": 2,
+        "midi": 42
+      },
+      {
+        "file": "palm-n43.7492a4",
+        "gainDb": -3.4,
+        "tier": 2,
+        "midi": 43
+      },
+      {
+        "file": "palm-n44.a8f748",
+        "gainDb": -3.4,
+        "tier": 2,
+        "midi": 44
+      },
+      {
+        "file": "palm-n45.69a9e7",
+        "gainDb": -3.4,
+        "tier": 2,
+        "midi": 45
+      },
+      {
+        "file": "palm-n46.90c8ca",
+        "gainDb": -3.4,
+        "tier": 2,
+        "midi": 46
+      },
+      {
+        "file": "palm-n47.92b24d",
+        "gainDb": -3.4,
+        "tier": 2,
+        "midi": 47
+      },
+      {
+        "file": "palm-n48.69706b",
+        "gainDb": -3.4,
+        "tier": 2,
+        "midi": 48
+      },
+      {
+        "file": "palm-n49.a213f3",
+        "gainDb": -3.4,
+        "tier": 2,
+        "midi": 49
+      },
+      {
+        "file": "palm-n50.32d0a2",
+        "gainDb": -3.4,
+        "tier": 2,
+        "midi": 50
+      },
+      {
+        "file": "palm-n51.9b65a5",
+        "gainDb": -3.4,
+        "tier": 2,
+        "midi": 51
+      },
+      {
+        "file": "palm-n52.8c8453",
+        "gainDb": -3.4,
+        "tier": 2,
+        "midi": 52
+      },
+      {
+        "file": "palm-n53.ca0455",
+        "gainDb": -3.4,
+        "tier": 2,
+        "midi": 53
+      },
+      {
+        "file": "palm-n54.bcb925",
+        "gainDb": -3.4,
+        "tier": 2,
+        "midi": 54
+      },
+      {
+        "file": "palm-n55.09b506",
+        "gainDb": -3.4,
+        "tier": 2,
+        "midi": 55
+      },
+      {
+        "file": "palm-n56.73d14b",
+        "gainDb": -3.4,
+        "tier": 2,
+        "midi": 56
+      },
+      {
+        "file": "palm-n57.5bcaee",
+        "gainDb": -3.4,
+        "tier": 2,
+        "midi": 57
+      },
+      {
+        "file": "palm-n58.e5cecb",
+        "gainDb": -3.4,
+        "tier": 2,
+        "midi": 58
+      },
+      {
+        "file": "palm-n59.620b02",
+        "gainDb": -3.4,
+        "tier": 2,
+        "midi": 59
+      },
+      {
+        "file": "palm-n60.f02974",
+        "gainDb": -3.4,
+        "tier": 2,
+        "midi": 60
+      },
+      {
+        "file": "palm-n61.08fbf0",
+        "gainDb": -3.4,
+        "tier": 2,
+        "midi": 61
+      },
+      {
+        "file": "palm-n62.958913",
+        "gainDb": -3.4,
+        "tier": 2,
+        "midi": 62
+      },
+      {
+        "file": "palm-n63.856d4f",
+        "gainDb": -3.4,
+        "tier": 2,
+        "midi": 63
+      },
+      {
+        "file": "palm-n64.9eb23c",
+        "gainDb": -3.4,
+        "tier": 2,
+        "midi": 64
+      },
+      {
+        "file": "palm-n65.923baa",
+        "gainDb": -3.4,
+        "tier": 2,
+        "midi": 65
+      },
+      {
+        "file": "palm-n66.a350bd",
+        "gainDb": -3.4,
+        "tier": 2,
+        "midi": 66
+      },
+      {
+        "file": "palm-n67.f6c6cf",
+        "gainDb": -3.4,
+        "tier": 2,
+        "midi": 67
+      },
+      {
+        "file": "palm-n68.31ce79",
+        "gainDb": -3.4,
+        "tier": 2,
+        "midi": 68
+      },
+      {
+        "file": "palm-n69.ca679c",
+        "gainDb": -3.4,
+        "tier": 2,
+        "midi": 69
+      },
+      {
+        "file": "palm-n70.6ec711",
+        "gainDb": -3.4,
+        "tier": 2,
+        "midi": 70
+      },
+      {
+        "file": "palm-n71.47cf54",
+        "gainDb": -3.4,
+        "tier": 2,
+        "midi": 71
+      },
+      {
+        "file": "palm-n72.079a49",
+        "gainDb": -3.4,
+        "tier": 2,
+        "midi": 72
+      },
+      {
+        "file": "palm-n73.0b5f71",
+        "gainDb": -3.4,
+        "tier": 2,
+        "midi": 73
+      },
+      {
+        "file": "palm-n74.7902af",
+        "gainDb": -3.4,
+        "tier": 2,
+        "midi": 74
+      },
+      {
+        "file": "palm-n75.7b6a44",
+        "gainDb": -3.4,
+        "tier": 2,
+        "midi": 75
+      },
+      {
+        "file": "palm-n76.921f67",
+        "gainDb": -3.4,
+        "tier": 2,
+        "midi": 76
+      },
+      {
+        "file": "palm-n77.a5220e",
+        "gainDb": -3.4,
+        "tier": 2,
+        "midi": 77
+      },
+      {
+        "file": "palm-n78.958efb",
+        "gainDb": -3.4,
+        "tier": 2,
+        "midi": 78
+      },
+      {
+        "file": "palm-n79.f6dce9",
+        "gainDb": -3.4,
+        "tier": 2,
+        "midi": 79
+      },
+      {
+        "file": "palm-n80.ac4235",
+        "gainDb": -3.4,
+        "tier": 2,
+        "midi": 80
+      },
+      {
+        "file": "palm-n81.331592",
+        "gainDb": -3.4,
+        "tier": 2,
+        "midi": 81
+      },
+      {
+        "file": "palm-n82.581890",
+        "gainDb": -3.4,
+        "tier": 2,
+        "midi": 82
+      },
+      {
+        "file": "palm-n83.277ff5",
+        "gainDb": -3.4,
+        "tier": 2,
+        "midi": 83
+      },
+      {
+        "file": "palm-n84.586572",
+        "gainDb": -3.4,
+        "tier": 2,
+        "midi": 84
+      }
+    ]
+  },
+  "credits": [
+    {
+      "source": "FS Seagull Steel String Acoustic Guitar with Fender Reverb (FlameStudios, 2008), dry notes",
+      "author": "Gary Campion (FlameStudios)",
+      "license": "GPL-3.0-or-later (see LICENSE.txt)",
+      "url": "https://web.archive.org/web/2015/http://www.flamestudios.org/free/GigaSamples"
+    }
+  ]
+}
